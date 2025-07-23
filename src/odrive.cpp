@@ -1,7 +1,7 @@
 #include "odrive.h"
 #include "can_interface.h"
+#include "debugprint.h"
 #include <string.h>
-#include <Arduino.h> //just for Serial
 
 enum class CmdIDs : uint8_t {
     GetVersion            = 0x00,
@@ -120,11 +120,14 @@ bool ODriveDriver::handleIncoming(uint32_t id, uint8_t* data, uint8_t len, uint3
         } else {
             lastStatus_.mode = MotorMode::Unknown;
         }
-    } else if (Serial && Serial.availableForWrite()) {
-        Serial.printf(" > o-rx cmd %x len %d: {", (uint8_t) cmd, len);
-        for (int i = 0; i < len; i++)
-            Serial.printf("0x%02x, ", data[i]);
-        Serial.println("}");
+    } else {
+        auto* debug = DebugPrinter::getPrinter();
+        if (debug && debug->availableForWrite()) {
+            debug->printf(" > o-rx cmd %x len %d: {", (uint8_t) cmd, len);
+            for (int i = 0; i < len; i++)
+                debug->printf("0x%02x, ", data[i]);
+            debug->println("}");
+        }
     }
     return true;
 }

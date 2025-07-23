@@ -1,7 +1,7 @@
 #include "cybergear.h"
 #include "can_interface.h"
 #include <string.h>
-#include <Arduino.h> // just for Serial!
+#include "debugprint.h"
 
 #define P_MIN (-12.5f)
 #define P_MAX (12.5f)
@@ -121,6 +121,7 @@ bool CyberGearDriver::handleIncoming(uint32_t id, uint8_t* data, uint8_t len, ui
     uint8_t msgtype = (id & 0xFF000000) >> 24; //bits 24-28
     uint8_t driveid = (id & 0x0000FF00) >> 8; //bits 8-15
     if (driveid != id_) return false;
+    auto* debug = DebugPrinter::getPrinter();
 
     if (msgtype == CmdRequest) { //status message reply!
         uint16_t pos_data = data[1] | (data[0] << 8);
@@ -140,14 +141,13 @@ bool CyberGearDriver::handleIncoming(uint32_t id, uint8_t* data, uint8_t len, ui
         lastStatus_ = updated; // Update the last status with the new values
         enabled_ = (updated.mode != MotorMode::Disabled);
         lastStatusTime_ = now;
-        if (Serial && Serial.availableForWrite())
         return true;
     } else if (msgtype == CmdFault) { //fault message (decimal 21)
-        if (Serial && Serial.availableForWrite()) {
-            Serial.printf("drive %x: fault message %x: {", id_, id);
+        if (debug && debug->availableForWrite()) {
+            debug->printf("drive %x: fault message %x: {", id_, id);
             for (int i = 0; i < len; i++)
-                Serial.printf("0x%02x, ", data[i]);
-            Serial.println("}");
+                debug->printf("0x%02x, ", data[i]);
+            debug->println("}");
         }
         return true;
     } else if (msgtype == CmdReadParamLower || msgtype == CmdReadParamUpper) {
@@ -160,8 +160,8 @@ bool CyberGearDriver::handleIncoming(uint32_t id, uint8_t* data, uint8_t len, ui
         }
         return true;
     } else {
-        if (Serial && Serial.availableForWrite())
-        Serial.printf("drive %x: unknown message type %d (header 0x%02x)\n", id_, msgtype, id);
+        if (debug && debug->availableForWrite())
+            debug->printf("drive %x: unknown message type %d (header 0x%02x)\n", id_, msgtype, id);
         return true; //still was for us ..
     }
     return false;
