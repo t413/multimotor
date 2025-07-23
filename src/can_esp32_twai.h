@@ -1,4 +1,5 @@
 #pragma once
+#if defined(ARDUINO) && defined(ESP32)
 #include "can_interface.h"
 #include <Arduino.h>
 
@@ -16,3 +17,5 @@ public:
     virtual CanMessage readOne();
     virtual String getAlerts();
 };
+
+#endif
