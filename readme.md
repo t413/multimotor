@@ -6,6 +6,7 @@
 [![GitHub forks](https://img.shields.io/github/forks/t413/multimotor?style=flat-square)](https://github.com/t413/multimotor/network/members)
 [![GitHub issues](https://img.shields.io/github/issues/t413/multimotor?style=flat-square)](https://github.com/t413/multimotor/issues)
 [![Last commit](https://img.shields.io/github/last-commit/t413/multimotor?style=flat-square)](https://github.com/t413/multimotor/commits/main)
+[![License](https://img.shields.io/github/license/t413/multimotor?style=flat-square)](https://github.com/t413/multimotor?tab=LGPL-3.0-1-ov-file#readme)
 [![Users Total](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fdiscord.com%2Fapi%2Finvites%2FDqJNftD7Hw%3Fwith_counts%3Dtrue&query=%24.approximate_member_count&logo=discord&logoColor=white&label=Users&color=5865F2&style=flat-square)](https://3d.t413.com/go/discord?ref=gh-omni)
 [![Users Online](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fdiscord.com%2Fapi%2Finvites%2FDqJNftD7Hw%3Fwith_counts%3Dtrue&query=%24.approximate_presence_count&label=Online&color=5865F2&style=flat-square)](https://3d.t413.com/go/discord?ref=gh-omni)
 [![Motors: Multi](https://img.shields.io/badge/Motors-Multi-yellow?style=flat-square)](#)
@@ -22,7 +23,15 @@ _Used by my rover controller [OmniCtrl](https://t413.com/go/omnictrl?ref=multimo
   * Arduino, PlatformIO, ESP-IDF, linux, etc.
   * Includes support for ESP32's native TWAI CanBus library
 
+### Roadmap / future plans:
+- Add additional CAN motor drivers
+  * MJBot Moteus [protocol](https://github.com/mjbots/moteus/blob/main/docs/reference.md#a1-can-format)
+- Add RS-485 and UART motor support
+  * Hiwonder/LewanSoul bus servos (like the LX-16A)
+  * Feetech bus servos (like the STS3215)
+- Python wrapper
 
+---
 _Join my [3D Design Discord](https://3d.t413.com/go/discord?ref=gh-omni) and say hi and talk shop!_
 
 [![Users Total](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fdiscord.com%2Fapi%2Finvites%2FDqJNftD7Hw%3Fwith_counts%3Dtrue&query=%24.approximate_member_count&logo=discord&logoColor=white&label=Users&color=5865F2&style=flat-square)](https://3d.t413.com/go/discord?ref=gh-omni)
@@ -61,7 +70,7 @@ _Join my [3D Design Discord](https://3d.t413.com/go/discord?ref=gh-omni) and say
 
 - If you use PlatformIO, add the following to your `platformio.ini`:
   ```ini
-  lib_deps = t413/multimotor
+  lib_deps = https://github.com/t413/multimotor.git
   ```
 - Or use via submodule:
   ```bash
