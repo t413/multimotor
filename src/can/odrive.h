@@ -1,5 +1,5 @@
 #pragma once
-#include "motordrive.h"
+#include "../motordrive.h"
 
 class CanInterface;
 enum class OdriveAxisState : uint8_t {

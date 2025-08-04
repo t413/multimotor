@@ -1,7 +1,7 @@
 #include "robstride.h"
 #include "can_interface.h"
 #include <string.h>
-#include "debugprint.h"
+#include "../debugprint.h"
 
 union RobStridePayload {
     uint8_t bytes[8] = {0};

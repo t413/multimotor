@@ -1,6 +1,6 @@
 #include "odrive.h"
 #include "can_interface.h"
-#include "debugprint.h"
+#include "../debugprint.h"
 #include <string.h>
 
 enum class CmdIDs : uint8_t {

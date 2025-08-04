@@ -1,7 +1,7 @@
 #include "cybergear.h"
 #include "can_interface.h"
 #include <string.h>
-#include "debugprint.h"
+#include "../debugprint.h"
 
 #define P_MIN (-12.5f)
 #define P_MAX (12.5f)
