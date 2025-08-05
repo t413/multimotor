@@ -52,6 +52,7 @@ public:
     MotorState getMotorState() const override { return lastStatus_; }
     void setOdriveMode(OdriveCtrlMode);
     void setOdriveEnable(bool enable);
+    void clearErrors();
     void send(CmdIDs cmd, uint8_t* data, uint8_t len = 8, bool ss = true, bool rtr = false);
 
     void fetchVBus() override;

@@ -66,7 +66,14 @@ void ODriveDriver::setOdriveMode(OdriveCtrlMode mode) {
     send(CmdIDs::SetControllerMode, p.bytes, 8, false); //no single shot (enables retries)
 }
 
+void ODriveDriver::clearErrors() {
+    Payload p;
+    p.dwords[0] = 1; // Clear all errors
+    send(CmdIDs::ClearErrors, p.bytes, 8, false); //no single shot (enables retries)
+}
+
 void ODriveDriver::setOdriveEnable(bool enable) {
+    if (lastFaults_) clearErrors(); //clear errors before enabling
     Payload p;
     p.dwords[0] = enable ? 8 : 1; //Closed loop control
     send(CmdIDs::SetAxisState, p.bytes, 8, false); //no single shot (enables retries)
