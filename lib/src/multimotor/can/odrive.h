@@ -45,7 +45,7 @@ public:
     void requestStatus() override;
     void setMode(MotorMode) override;
     void setSetpoint(MotorMode, float) override;
-    bool handleIncoming(uint32_t id, uint8_t* data, uint8_t len, uint32_t now) override;
+    bool handleIncoming(uint32_t id, uint8_t const* data, uint8_t len, uint32_t now) override;
     uint32_t getLastStatusTime() const override { return lastStatusTime_; }
     uint32_t getLastFaults() const override { return lastFaults_; }
 

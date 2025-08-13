@@ -101,7 +101,7 @@ void ODriveDriver::setSetpoint(MotorMode mode, float value) {
     send(cmd, p.bytes);
 }
 
-bool ODriveDriver::handleIncoming(uint32_t id, uint8_t* data, uint8_t len, uint32_t now) {
+bool ODriveDriver::handleIncoming(uint32_t id, uint8_t const* data, uint8_t len, uint32_t now) {
     uint8_t inCanId = id >> 5;
     if (inCanId != id_) return false;
     CmdIDs cmd = (CmdIDs) (id & 0x1F);

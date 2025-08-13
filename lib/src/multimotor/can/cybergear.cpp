@@ -118,7 +118,7 @@ void CyberGearDriver::fetchVBus() {
     if (can_) can_->send(mkID(CmdReadParamLower, 0, 0, id_), data, 8, true);
 }
 
-bool CyberGearDriver::handleIncoming(uint32_t id, uint8_t* data, uint8_t len, uint32_t now) {
+bool CyberGearDriver::handleIncoming(uint32_t id, uint8_t const* data, uint8_t len, uint32_t now) {
     uint8_t msgtype = (id & 0xFF000000) >> 24; //bits 24-28
     uint8_t driveid = (id & 0x0000FF00) >> 8; //bits 8-15
     if (driveid != id_) return false;

@@ -108,7 +108,7 @@ void RobStrideDriver::setZeroPosition() {
     send(RobStrideCmdType::SetPosZero, data, 8);
 }
 
-bool RobStrideDriver::handleIncoming(uint32_t id, uint8_t* data, uint8_t len, uint32_t now) {
+bool RobStrideDriver::handleIncoming(uint32_t id, uint8_t const* data, uint8_t len, uint32_t now) {
     uint8_t motorId = id & 0xFF;
     if (motorId != id_) return false;
 
