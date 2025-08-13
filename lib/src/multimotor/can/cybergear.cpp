@@ -107,7 +107,8 @@ void CyberGearDriver::setSetpoint(MotorMode mode, float value) {
         case MotorMode::Current:  addr = AddrCurrentSetpoint; break;
         default: return;
     }
-    uint8_t data[8] = { addr & 0x00FF, addr >> 8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+    uint8_t data[8] = {0};
+    memcpy(&data[0], &addr, 2);
     memcpy(&data[4], &value, 4);
     if (can_) can_->send(mkID(CmdWriteParamUpper, 0, 0, id_), data, 8, true);
 }
