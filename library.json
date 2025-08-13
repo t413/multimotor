@@ -1,5 +1,8 @@
 {
     "name": "MultiMotor",
+    "build": {
+        "srcDir": "lib/src"
+    },
     "version": "1.0.0",
     "description": "Multi-motor robotics actuator library",
     "keywords": ["motor", "control", "can", "embedded"],
