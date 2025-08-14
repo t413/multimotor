@@ -35,7 +35,6 @@ class ODriveDriver : public MotorDrive {
     uint32_t lastStatusTime_ = 0;
     float lastVolt_ = 0, lastCurr_ = 0; //encoder estimates packet
     uint32_t lastBusVoltTime_ = 0;
-    bool enabled_ = false;
     MotorState lastStatus_; // Holds the state of the motor
     MotorMode lastSentMode_ = MotorMode::Unknown;
 public:

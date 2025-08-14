@@ -29,7 +29,7 @@ public:
     void moveSpeed(int16_t speed);
     void setAngleLimits(float minDeg, float maxDeg);
     void setId(uint8_t newId);
-    uint32_t getId() const { return id_; }
+    uint32_t getId() const override { return id_; }
     void stop();
     float getTemperature() const { return temperature_; }
     static ParseResult parsePacket(uint8_t const* data, uint8_t len);

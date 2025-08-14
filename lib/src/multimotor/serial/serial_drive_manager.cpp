@@ -1,4 +1,6 @@
 #include "serial_drive_manager.h"
+#include <cstring>  //memcpy, memmove
+#include <algorithm> //std::min
 #include "../motordrive.h"
 #include "../debugprint.h"
 #include "lx_servo.h"
@@ -23,8 +25,6 @@ uint8_t SerialDriveManager::getCount() const {
 }
 
 void SerialDriveManager::handleIncoming(uint32_t id, uint8_t const* indata, uint8_t inlen, uint32_t now) {
-    auto dbg = DebugPrinter::getPrinter();
-
     uint8_t loop = 0; //limited looping
     while ((inlen > 0) && loop++ < 4) {
         //copy as much data as we can into inBuffer_
