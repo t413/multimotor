@@ -16,6 +16,7 @@ public:
     virtual bool availableForWrite() = 0;
     virtual void printf(const char* format, ...) = 0;
     virtual void println(const char* str) = 0;
+    virtual void printhex(const uint8_t* buf, size_t len, bool newline=true);
     #ifdef ARDUINO
     virtual void println(String) = 0; // For Arduino compatibility
     #elif defined(DEBUG_USE_STDOUT)
@@ -25,6 +26,7 @@ public:
     // Static interface for singleton access
     static void setPrinter(DebugPrinter* printer);
     static DebugPrinter* getPrinter();
+    static void log(const char* format, ...);
 
     static void setPlatformSpecific(void*);
 

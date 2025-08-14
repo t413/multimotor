@@ -6,7 +6,23 @@ DebugPrinter* DebugPrinter::instance_ = nullptr;
 void DebugPrinter::setPrinter(DebugPrinter* printer) { instance_ = printer; }
 DebugPrinter* DebugPrinter::getPrinter() { return instance_; }
 
+void DebugPrinter::log(const char* format, ...) {
+    if (instance_ && instance_->availableForWrite()) {
+        va_list args;
+        va_start(args, format);
+        instance_->printf(format, args);
+        va_end(args);
+    }
+}
 
+void DebugPrinter::printhex(const uint8_t* buf, size_t len, bool newline) {
+    if (!instance_ || !instance_->availableForWrite())
+        return;
+    for (size_t i = 0; i < len; ++i) {
+        instance_->printf("%02X ", buf[i]);
+    }
+    if (newline) instance_->println(nullptr);
+}
 
 // --------------------------------------- //
 // -- platform specific implementations -- //

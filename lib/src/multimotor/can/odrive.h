@@ -42,6 +42,7 @@ public:
     ODriveDriver(uint8_t id, CanInterface* can);
 
     //contract
+    uint32_t getId() const override { return id_; }
     void requestStatus() override;
     void setMode(MotorMode) override;
     void setSetpoint(MotorMode, float) override;

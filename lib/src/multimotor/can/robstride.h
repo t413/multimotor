@@ -48,6 +48,7 @@ public:
     RobStrideDriver(uint8_t id, CanInterface* can);
 
     // MotorDrive interface implementation
+    uint32_t getId() const override { return id_; }
     void requestStatus() override;
     void setMode(MotorMode mode) override;
     void setSetpoint(MotorMode mode, float value) override;

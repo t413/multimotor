@@ -18,6 +18,7 @@ struct MotorState {
 };
 class MotorDrive {
 public:
+    virtual uint32_t getId() const = 0;
     virtual void requestStatus() = 0;
     virtual void setMode(MotorMode mode) = 0;
     virtual void setSetpoint(MotorMode, float) = 0;
