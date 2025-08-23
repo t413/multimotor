@@ -32,8 +32,7 @@ LXServo::LXServo(uint8_t id, SerialDriveManager* bus)
 
 bool LXServo::send(uint8_t cmd, const uint8_t* params, int param_cnt, uint8_t id) {
     if (param_cnt < 0 || param_cnt > 4) return false;
-    auto serial = (bus_? bus_->getInterface() : nullptr);
-    if (!serial) return false;
+    if (!bus_) return false;
 
     uint8_t txbuf[32] = {0};
     int buflen = 6 + param_cnt;
@@ -51,7 +50,7 @@ bool LXServo::send(uint8_t cmd, const uint8_t* params, int param_cnt, uint8_t id
         cksum += txbuf[i];
     txbuf[buflen - 1] = ~cksum;
 
-    serial->write(txbuf, buflen);
+    bus_->write(txbuf, buflen);
     return true;
 }
 

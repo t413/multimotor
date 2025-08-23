@@ -5,6 +5,34 @@
 #include "../debugprint.h"
 #include "lx_servo.h"
 
+void SerialDriveManager::beginSinglePin(SerialInterface* port, int txRxPin) {
+    interface_ = port;
+    uartSinglePin_ = txRxPin;
+    if (!interface_)
+        return;
+#ifdef ARDUINO_ARCH_ESP32
+    auto serial = (HardwareSerial*)interface_;
+    serial->begin(115200, SERIAL_8N1, txRxPin, txRxPin);
+    pinMode(txRxPin, OUTPUT | PULLUP);
+#endif
+    delay(3);
+    while (interface_->available())
+        interface_->read();
+}
+
+void SerialDriveManager::beginDualPins(SerialInterface* port, int txPin, int rxPin) {
+    interface_ = port;
+    if (!interface_)
+        return;
+    uartSinglePin_ = GPIO_NUM_NC;
+    #ifdef ARDUINO
+    auto serial = (HardwareSerial*)interface_;
+    serial->begin(115200, SERIAL_8N1, txPin, rxPin);
+    #endif
+    pinMode(txPin, OUTPUT | PULLUP);
+    pinMode(rxPin, INPUT | PULLDOWN);
+}
+
 void SerialDriveManager::addDrive(MotorDrive* drive) {
     if (driveCount_ < MAX_DRIVES) {
         drives_[driveCount_++] = drive;
@@ -48,6 +76,13 @@ void SerialDriveManager::handleIncoming(uint32_t id, uint8_t const* indata, uint
 }
 
 void SerialDriveManager::iterate(uint32_t now) {
+    if (uartSinglePin_ != GPIO_NUM_NC) {
+        if (interface_->availableForWrite() < 1) { //finished write
+            pinMode(uartSinglePin_, INPUT | PULLUP);
+            delayMicroseconds(10);
+        }
+    }
+
     uint8_t buf[INBUF_LEN];
     int len = 0;
     while (interface_->available() && (len < INBUF_LEN)) {
@@ -56,4 +91,14 @@ void SerialDriveManager::iterate(uint32_t now) {
     if (len > 0) {
         handleIncoming(0, buf, len, now);
     }
+}
+
+void SerialDriveManager::write(uint8_t const* data, uint8_t len) {
+    if (!interface_ || len == 0) return;
+#if defined ARDUINO_ARCH_ESP32
+    if (uartSinglePin_ != GPIO_NUM_NC)
+        pinMode(uartSinglePin_, OUTPUT | PULLUP);
+    delayMicroseconds(10);
+#endif
+    interface_->write(data, len);
 }
