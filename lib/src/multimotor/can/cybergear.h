@@ -1,7 +1,8 @@
 #pragma once
 #include "../motordrive.h"
+#include "../can/can_interface.h"
 
-class CanInterface;
+enum class CGCmds : uint8_t;
 
 class CyberGearDriver : public MotorDrive {
     uint8_t id_ = 0;
@@ -24,6 +25,7 @@ public:
     uint32_t getLastStatusTime() const override { return lastStatusTime_; }
     uint32_t getLastFaults() const override { return lastFaults_; }
 
+    void send(CGCmds cmd, uint8_t* data, uint8_t len, CanSS ss = CanSS::Singleshot, CanReq rtr = CanReq::Command);
     MotorState getMotorState() const override { return lastStatus_; }
     void setCyberMode(uint8_t mode);
     void setEnable(bool enable);

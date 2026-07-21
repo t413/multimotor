@@ -16,18 +16,18 @@ float uint_to_float(uint16_t value, float value_min, float value_max) {
     return (float)value / int_max * span + value_min;
 }
 
-enum Cmds {
-    CmdPosition              =  0x1,
-    CmdRequest               =  0x2,
-    CmdEnable                =  0x3,
-    CmdStop                  =  0x4,
-    CmdSetMechPositionToZero =  0x6,
-    CmdSetCanId              =  0x7,
-    CmdWriteParamLower       =  0x8,  // params 0x0000 - 0x302F
-    CmdReadParamLower        =  0x9,  // params 0x0000 - 0x302F
-    CmdReadParamUpper        = 0x11,  // params >= 0x7005
-    CmdWriteParamUpper       = 0x12,  // params >= 0x7005
-    CmdFault                 = 0x15, //also apparently used for status requests
+enum class CGCmds : uint8_t {
+    Position              =  0x1,
+    Request               =  0x2,
+    Enable                =  0x3,
+    Stop                  =  0x4,
+    SetMechPositionToZero =  0x6,
+    SetCanId              =  0x7,
+    WriteParamLower       =  0x8,  // params 0x0000 - 0x302F
+    ReadParamLower        =  0x9,  // params 0x0000 - 0x302F
+    ReadParamUpper        = 0x11,  // params >= 0x7005
+    WriteParamUpper       = 0x12,  // params >= 0x7005
+    Fault                 = 0x15, //also apparently used for status requests
 };
 
 enum Addresses {
@@ -73,19 +73,27 @@ uint32_t mkID(uint8_t cmd, uint8_t opthi, uint8_t optlo, uint8_t id) {
     return (cmd << 24) | (opthi << 16) | (optlo << 8) | id;
 }
 
+void CyberGearDriver::send(CGCmds cmd, uint8_t* data, uint8_t len, CanSS ss, CanReq rtr) {
+    if (!can_) return;
+    can_->send(mkID((uint8_t)cmd, 0, 0, id_), data, len, CanFrame::Extended, ss, rtr);
+}
+
+
 void CyberGearDriver::requestStatus() {
     uint8_t data[8] = {0x00}; //TODO can this 0 bytes?
-    if (can_) can_->send(mkID(CmdFault, 0, 0, id_), data, 8, true);
+    send(CGCmds::Fault, data, 8, CanSS::Retry, CanReq::RequestReply);
 }
 
 void CyberGearDriver::setCyberMode(uint8_t mode) {
     uint8_t data[8] = { AddrRunMode & 0x00FF, AddrRunMode >> 8, 0x00, 0x00, (uint8_t) mode, 0x00, 0x00, 0x00};
-    if (can_) can_->send(mkID(CmdWriteParamUpper, 0, 0, id_), data, 8, true, false); //no single shot, will retry
+    // if (can_) can_->send(mkID(CGCmds::WriteParamUpper, 0, 0, id_), data, 8, true, false); //no single shot, will retry
+    send(CGCmds::WriteParamUpper, data, 8, CanSS::Retry, CanReq::Command);
 }
 
 void CyberGearDriver::setEnable(bool enable) {
     uint8_t data[8] = {0x00};
-    if (can_) can_->send(mkID(enable? CmdEnable : CmdStop, 0, 0, id_), data, 8, true, false); //no single shot, will retry);
+    // if (can_) can_->send(mkID(enable? CmdEnable : CmdStop, 0, 0, id_), data, 8, true, false); //no single shot, will retry);
+    send(enable? CGCmds::Enable : CGCmds::Stop, data, 8, CanSS::Retry, CanReq::Command);
 }
 
 void CyberGearDriver::setMode(MotorMode mode) {
@@ -110,21 +118,21 @@ void CyberGearDriver::setSetpoint(MotorMode mode, float value) {
     uint8_t data[8] = {0};
     memcpy(&data[0], &addr, 2);
     memcpy(&data[4], &value, 4);
-    if (can_) can_->send(mkID(CmdWriteParamUpper, 0, 0, id_), data, 8, true);
+    send(CGCmds::WriteParamUpper, data, 8, CanSS::Singleshot, CanReq::Command);
 }
 
 void CyberGearDriver::fetchVBus() {
     uint8_t data[8] = { AddrVBUSfloat & 0x00FF, AddrVBUSfloat >> 8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-    if (can_) can_->send(mkID(CmdReadParamLower, 0, 0, id_), data, 8, true);
+    send(CGCmds::ReadParamLower, data, 8, CanSS::Retry, CanReq::RequestReply);
 }
 
 bool CyberGearDriver::handleIncoming(uint32_t id, uint8_t const* data, uint8_t len, uint32_t now) {
-    uint8_t msgtype = (id & 0xFF000000) >> 24; //bits 24-28
+    auto msgtype = (CGCmds)((id & 0xFF000000) >> 24); //bits 24-28
     uint8_t driveid = (id & 0x0000FF00) >> 8; //bits 8-15
     if (driveid != id_) return false;
     auto* debug = DebugPrinter::getPrinter();
 
-    if (msgtype == CmdRequest) { //status message reply!
+    if (msgtype == CGCmds::Request) { //status message reply!
         uint16_t pos_data = data[1] | (data[0] << 8);
         uint16_t vel_data = data[3] | (data[2] << 8);
         uint16_t torque_data = data[5] | (data[4] << 8);
@@ -143,7 +151,7 @@ bool CyberGearDriver::handleIncoming(uint32_t id, uint8_t const* data, uint8_t l
         enabled_ = (updated.mode != MotorMode::Disabled);
         lastStatusTime_ = now;
         return true;
-    } else if (msgtype == CmdFault) { //fault message (decimal 21)
+    } else if (msgtype == CGCmds::Fault) { //fault message (decimal 21)
         if (debug && debug->availableForWrite()) {
             debug->printf("drive %x: fault message %x: {", id_, id);
             for (int i = 0; i < len; i++)
@@ -151,7 +159,7 @@ bool CyberGearDriver::handleIncoming(uint32_t id, uint8_t const* data, uint8_t l
             debug->println("}");
         }
         return true;
-    } else if (msgtype == CmdReadParamLower || msgtype == CmdReadParamUpper) {
+    } else if (msgtype == CGCmds::ReadParamLower || msgtype == CGCmds::ReadParamUpper) {
         // Parameter response - extract address and value
         uint16_t addr = data[0] | (data[1] << 8);
         if (addr == AddrVBUSmv && len >= 8) {

@@ -39,8 +39,8 @@ uint16_t mkID(uint8_t id, CmdIDs cmd) {
     return (id << 5) | (uint16_t) cmd;
 }
 
-void ODriveDriver::send(CmdIDs cmd, uint8_t* data, uint8_t len, bool ss, bool rtr) {
-    if (can_) can_->send(mkID(id_, (CmdIDs) cmd), data, len, false, ss, rtr);
+void ODriveDriver::send(CmdIDs cmd, uint8_t* data, uint8_t len, CanSS ss, CanReq rtr) {
+    if (can_) can_->send(mkID(id_, (CmdIDs) cmd), data, len, CanFrame::Standard, ss, rtr);
 }
 
 //get different combinations of payload
@@ -52,31 +52,34 @@ union Payload {
 };
 
 void ODriveDriver::requestStatus() {
-    send(CmdIDs::GetEncoderEstimates, NULL, 0, true, true); //single shot, request-to-receive
+    send(CmdIDs::GetEncoderEstimates, NULL, 0, CanSS::Singleshot, CanReq::RequestReply); //single shot, request-to-receive
 }
 
 void ODriveDriver::fetchVBus() {
-    send(CmdIDs::GetBusVoltageCurrent, NULL, 0, true, true);
+    send(CmdIDs::GetBusVoltageCurrent, NULL, 0, CanSS::Singleshot, CanReq::RequestReply);
 }
 
 void ODriveDriver::setOdriveMode(OdriveCtrlMode mode) {
     Payload p;
     p.dwords[0] = (uint32_t) mode;
     p.dwords[1] = 1; //passtrough input mode
-    send(CmdIDs::SetControllerMode, p.bytes, 8, false); //no single shot (enables retries)
+    send(CmdIDs::SetControllerMode, p.bytes, 8, CanSS::Retry); //no single shot (enables retries)
 }
 
 void ODriveDriver::clearErrors() {
     Payload p;
     p.dwords[0] = 1; // Clear all errors
-    send(CmdIDs::ClearErrors, p.bytes, 8, false); //no single shot (enables retries)
+    send(CmdIDs::ClearErrors, p.bytes, 8, CanSS::Retry); //no single shot (enables retries)
 }
 
 void ODriveDriver::setOdriveEnable(bool enable) {
-    if (lastFaults_) clearErrors(); //clear errors before enabling
+    if (lastFaults_) {
+        DebugPrinter::log("ODrive %d faults %d detected, clearing first\n", id_, lastFaults_);
+        clearErrors(); //clear errors before enabling
+    }
     Payload p;
     p.dwords[0] = enable ? 8 : 1; //Closed loop control
-    send(CmdIDs::SetAxisState, p.bytes, 8, false); //no single shot (enables retries)
+    send(CmdIDs::SetAxisState, p.bytes, 8, CanSS::Retry); //no single shot (enables retries)
 }
 
 void ODriveDriver::setMode(MotorMode mode) {

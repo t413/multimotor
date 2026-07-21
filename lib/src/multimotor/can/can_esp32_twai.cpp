@@ -42,12 +42,13 @@ void CanEsp32Twai::setup(uint8_t rx, uint8_t tx, int baudrate, Stream* debug) {
         if (debug) debug->println("Failed to reconfigure alerts");
         return;
     }
+    if (debug) debug->println("twai set up");
 }
-void CanEsp32Twai::send(uint32_t id, uint8_t* data, uint8_t len, bool extended, bool ss, bool rtr) {
+void CanEsp32Twai::send(uint32_t id, uint8_t* data, uint8_t len, CanFrame extended, CanSS ss, CanReq rtr) {
     twai_message_t message = {0};
-    message.extd = extended? 1 : 0; //enable extended frame format
-    message.ss = ss; //enable single shot transmission
-    message.rtr = rtr; //enable remote transmission request
+    message.extd = (extended == CanFrame::Extended)? 1 : 0; //enable extended frame format
+    message.ss = (ss == CanSS::Singleshot)? 1 : 0; //enable single shot transmission
+    message.rtr = (rtr == CanReq::RequestReply)? 1 : 0; //enable remote transmission request
     message.identifier = id;
     message.data_length_code = len;
     memcpy(message.data, data, len);

@@ -1,5 +1,6 @@
 #pragma once
 #include "../motordrive.h"
+#include "../can/can_interface.h"
 
 class CanInterface;
 enum class OdriveAxisState : uint8_t {
@@ -53,7 +54,7 @@ public:
     void setOdriveMode(OdriveCtrlMode);
     void setOdriveEnable(bool enable);
     void clearErrors();
-    void send(CmdIDs cmd, uint8_t* data, uint8_t len = 8, bool ss = true, bool rtr = false);
+    void send(CmdIDs cmd, uint8_t* data, uint8_t len = 8, CanSS ss = CanSS::Singleshot, CanReq rtr = CanReq::Command);
 
     void fetchVBus() override;
     float getVBus() const override { return lastVolt_; }
