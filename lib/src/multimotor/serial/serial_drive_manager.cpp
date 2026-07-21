@@ -24,8 +24,9 @@ uint8_t SerialDriveManager::getCount() const {
     return driveCount_;
 }
 
-void SerialDriveManager::handleIncoming(uint32_t id, uint8_t const* indata, uint8_t inlen, uint32_t now) {
+bool SerialDriveManager::handleIncoming(uint32_t id, uint8_t const* indata, uint8_t inlen, uint32_t now) {
     uint8_t loop = 0; //limited looping
+    uint8_t handledTotal = 0;
     while ((inlen > 0) && loop++ < 4) {
         //copy as much data as we can into inBuffer_
         int16_t copyLen = std::min((int16_t)inlen, (int16_t)(INBUF_LEN - inBufferIndex_));
@@ -39,21 +40,29 @@ void SerialDriveManager::handleIncoming(uint32_t id, uint8_t const* indata, uint
             if (auto servo = getDrive(result.id)) {
                 bool handled = servo->handleIncoming(result.id, inBuffer_ + result.start, result.len, now);
                 if (!handled) DebugPrinter::log("LXServo: Unhandled packet for ID %d\n", result.id);
+                else handledTotal++;
             } else DebugPrinter::log("LXServo: No servo registered with ID %d\n", result.id);
             //remove parsed data from inBuffer_
             memmove(inBuffer_, inBuffer_ + result.start + result.len, inBufferIndex_ - (result.start + result.len));
             inBufferIndex_ -= (result.start + result.len);
         }
     }
+    return handledTotal > 0;
 }
 
-void SerialDriveManager::iterate(uint32_t now) {
+uint8_t SerialDriveManager::iterate(uint32_t now, uint32_t timeout_ms) {
     uint8_t buf[INBUF_LEN];
+    uint8_t ret = 0;
     int len = 0;
     while (interface_->available() && (len < INBUF_LEN)) {
         buf[len++] = interface_->read();
     }
     if (len > 0) {
-        handleIncoming(0, buf, len, now);
+        ret += handleIncoming(0, buf, len, now)? 1 : 0;
     }
+    return ret;
+}
+
+bool SerialDriveManager::readOnce(uint32_t now, uint32_t timeout_us) {
+    return iterate(now, 0) > 0;
 }

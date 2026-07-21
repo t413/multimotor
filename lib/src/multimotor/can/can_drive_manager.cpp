@@ -25,7 +25,7 @@ uint8_t CanDriveManager::getCount() const {
     return driveCount_;
 }
 
-void CanDriveManager::handleIncoming(uint32_t id, uint8_t const* data, uint8_t len, uint32_t now) {
+bool CanDriveManager::handleIncoming(uint32_t id, uint8_t const* data, uint8_t len, uint32_t now) {
     uint8_t handled = 0;
     for (uint8_t i = 0; i < driveCount_; ++i) {
         handled += drives_[i]->handleIncoming(id, data, len, now);
@@ -35,14 +35,31 @@ void CanDriveManager::handleIncoming(uint32_t id, uint8_t const* data, uint8_t l
         dbg->printf("CanDriveManager: No drive handled incoming data for ID %u, len %u:", id, len);
         dbg->printhex(data, len, true);
     }
+    return handled > 0;
 }
 
-void CanDriveManager::iterate(uint32_t now) {
-    #ifdef ARDUINO_ARCH_ESP32
-    auto can = (CanEsp32Twai*) interface_;
-    while (can && can->available()) {
-        CanMessage message = can->readOne();
-        handleIncoming(message.id, message.data, message.len, now);
+bool CanDriveManager::readOnce(uint32_t now, uint32_t timeout_us) {
+    if (timeout_us == 0) {
+        return iterate(now, 0) > 0;
     }
-    #endif
+    uint32_t start = micros();
+    uint32_t deadline = start + timeout_us;
+    uint32_t timeout_ms = timeout_us / 1000;
+
+    while ((int32_t)(micros() - deadline) <= 0) {
+        if (iterate(now, timeout_ms) > 0) return true;
+        delayMicroseconds(10); //small pause to avoid busy loop
+    }
+    return false;
+}
+
+uint8_t CanDriveManager::iterate(uint32_t now, uint32_t timeout_ms) {
+    uint8_t ret = 0;
+    auto can = (CanEsp32Twai*) interface_;
+    CanMessage msg;
+    while (can && can->readOne(msg, ret == 0 ? timeout_ms : 0)) {
+        handleIncoming(msg.id, msg.data, msg.len, now);
+        ++ret;
+    }
+    return ret;
 }

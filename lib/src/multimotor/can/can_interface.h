@@ -16,8 +16,15 @@ enum class CanReq : bool {
     RequestReply = true, //expecting a reply
 };
 
+struct CanMessage {
+    uint32_t id;
+    uint8_t data[8];
+    uint8_t len;
+};
+
 class CanInterface {
 public:
     virtual void send(uint32_t id, uint8_t* data, uint8_t len, CanFrame extended, CanSS ss = CanSS::Singleshot, CanReq rtr = CanReq::Command) = 0;
+    virtual bool readOne(CanMessage&, uint32_t timeout_ms) = 0;
 };
 

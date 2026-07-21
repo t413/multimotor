@@ -12,8 +12,9 @@ public:
     virtual MotorDrive* const* getDrives() const override { return drives_; }
     virtual uint8_t getCount() const override;
 
-    virtual void handleIncoming(uint32_t id, uint8_t const* data, uint8_t len, uint32_t now) override;
-    virtual void iterate(uint32_t now) override;
+    virtual bool handleIncoming(uint32_t id, uint8_t const* data, uint8_t len, uint32_t now) override;
+    virtual bool readOnce(uint32_t now, uint32_t timeout_us) override;
+    virtual uint8_t iterate(uint32_t now, uint32_t timeout_ms) override;
 
 protected:
     static constexpr uint8_t MAX_DRIVES = 16;

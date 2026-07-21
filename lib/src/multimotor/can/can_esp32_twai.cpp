@@ -63,26 +63,19 @@ void CanEsp32Twai::send(uint32_t id, uint8_t* data, uint8_t len, CanFrame extend
     twai_transmit(&message, pdMS_TO_TICKS(1));
 }
 
-bool CanEsp32Twai::available() {
-    uint32_t alerts = 0;
-    twai_read_alerts(&alerts, pdMS_TO_TICKS(1));
-    return alerts & TWAI_ALERT_RX_DATA;
-}
-
-CanMessage CanEsp32Twai::readOne() {
+bool CanEsp32Twai::readOne(CanMessage& msg, uint32_t timeout_ms) {
     twai_message_t message = {0};
-    if (twai_receive(&message, pdMS_TO_TICKS(1)) != ESP_OK)
-        return CanMessage{0, {0}, 0};
-    CanMessage ret;
-    ret.id = message.identifier;
-    ret.len = message.data_length_code;
-    memcpy(ret.data, message.data, ret.len);
-    return ret;
+    if (twai_receive(&message, pdMS_TO_TICKS(timeout_ms)) != ESP_OK)
+        return false;
+    msg.id = message.identifier;
+    msg.len = message.data_length_code;
+    memcpy(msg.data, message.data, msg.len);
+    return true;
 }
 
 String CanEsp32Twai::getAlerts() {
     uint32_t alerts = 0;
-    twai_read_alerts(&alerts, pdMS_TO_TICKS(1));
+    twai_read_alerts(&alerts, 0);
     String ret;
     // if (alerts & TWAI_ALERT_RX_DATA) ret += "RX ";
     // if (alerts & TWAI_ALERT_TX_SUCCESS) ret += "TX_SUCCESS ";
