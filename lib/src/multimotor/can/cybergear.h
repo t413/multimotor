@@ -9,6 +9,7 @@ class CyberGearDriver : public MotorDrive {
     CanInterface* can_ = nullptr;
     uint8_t lastFaults_ = 0;
     uint32_t lastStatusTime_ = 0;
+    uint32_t lastCommsTime_ = 0;
     bool enabled_ = false;
     MotorState lastStatus_; // Holds the state of the motor
     float vbus_ = 0.0f;  // Cached VBUS value
@@ -25,7 +26,7 @@ public:
     uint32_t getLastStatusTime() const override { return lastStatusTime_; }
     uint32_t getLastFaults() const override { return lastFaults_; }
 
-    void send(CGCmds cmd, uint8_t* data, uint8_t len, CanSS ss = CanSS::Singleshot, CanReq rtr = CanReq::Command);
+    void send(CGCmds cmd, uint8_t* data, uint8_t len, CanSS ss = CanSS::Singleshot);
     MotorState getMotorState() const override { return lastStatus_; }
     void setCyberMode(uint8_t mode);
     void setEnable(bool enable);

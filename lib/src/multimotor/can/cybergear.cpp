@@ -73,27 +73,25 @@ uint32_t mkID(uint8_t cmd, uint8_t opthi, uint8_t optlo, uint8_t id) {
     return (cmd << 24) | (opthi << 16) | (optlo << 8) | id;
 }
 
-void CyberGearDriver::send(CGCmds cmd, uint8_t* data, uint8_t len, CanSS ss, CanReq rtr) {
+void CyberGearDriver::send(CGCmds cmd, uint8_t* data, uint8_t len, CanSS ss) {
     if (!can_) return;
-    can_->send(mkID((uint8_t)cmd, 0, 0, id_), data, len, CanFrame::Extended, ss, rtr);
+    if (lastCommsTime_ == 0) ss = CanSS::Singleshot; //force no-retry until we've heard anything back
+    //no RTR, seems to break things with cybergear CAN. Always use CanReq::Command.
+    can_->send(mkID((uint8_t)cmd, 0, 0, id_), data, len, CanFrame::Extended, ss, CanReq::Command);
 }
 
 
 void CyberGearDriver::requestStatus() {
-    uint8_t data[8] = {0x00}; //TODO can this 0 bytes?
-    send(CGCmds::Fault, data, 8, CanSS::Retry, CanReq::RequestReply);
+    send(CGCmds::Fault, nullptr, 0, CanSS::Retry);
 }
 
 void CyberGearDriver::setCyberMode(uint8_t mode) {
     uint8_t data[8] = { AddrRunMode & 0x00FF, AddrRunMode >> 8, 0x00, 0x00, (uint8_t) mode, 0x00, 0x00, 0x00};
-    // if (can_) can_->send(mkID(CGCmds::WriteParamUpper, 0, 0, id_), data, 8, true, false); //no single shot, will retry
-    send(CGCmds::WriteParamUpper, data, 8, CanSS::Retry, CanReq::Command);
+    send(CGCmds::WriteParamUpper, data, 8, CanSS::Retry);
 }
 
 void CyberGearDriver::setEnable(bool enable) {
-    uint8_t data[8] = {0x00};
-    // if (can_) can_->send(mkID(enable? CmdEnable : CmdStop, 0, 0, id_), data, 8, true, false); //no single shot, will retry);
-    send(enable? CGCmds::Enable : CGCmds::Stop, data, 8, CanSS::Retry, CanReq::Command);
+    send(enable? CGCmds::Enable : CGCmds::Stop, nullptr, 0, CanSS::Retry);
 }
 
 void CyberGearDriver::setMode(MotorMode mode) {
@@ -118,12 +116,12 @@ void CyberGearDriver::setSetpoint(MotorMode mode, float value) {
     uint8_t data[8] = {0};
     memcpy(&data[0], &addr, 2);
     memcpy(&data[4], &value, 4);
-    send(CGCmds::WriteParamUpper, data, 8, CanSS::Singleshot, CanReq::Command);
+    send(CGCmds::WriteParamUpper, data, 8, CanSS::Singleshot);
 }
 
 void CyberGearDriver::fetchVBus() {
     uint8_t data[8] = { AddrVBUSfloat & 0x00FF, AddrVBUSfloat >> 8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-    send(CGCmds::ReadParamLower, data, 8, CanSS::Retry, CanReq::RequestReply);
+    send(CGCmds::ReadParamLower, data, 8, CanSS::Retry);
 }
 
 bool CyberGearDriver::handleIncoming(uint32_t id, uint8_t const* data, uint8_t len, uint32_t now) {
@@ -131,6 +129,7 @@ bool CyberGearDriver::handleIncoming(uint32_t id, uint8_t const* data, uint8_t l
     uint8_t driveid = (id & 0x0000FF00) >> 8; //bits 8-15
     if (driveid != id_) return false;
     auto* debug = DebugPrinter::getPrinter();
+    lastCommsTime_ = now;
 
     if (msgtype == CGCmds::Request) { //status message reply!
         uint16_t pos_data = data[1] | (data[0] << 8);
