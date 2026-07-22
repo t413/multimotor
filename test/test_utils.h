@@ -9,22 +9,18 @@ void printHex(const char* info, const uint8_t* data, size_t len);
 // Mock CanInterface for testing
 class MockCanInterface : public CanInterface {
 public:
-    struct SentFrame {
-        uint32_t id;
-        uint8_t data[8];
-        uint8_t len;
-    };
-    std::vector<SentFrame> sentFrames;
+    std::vector<CanMessage> sentFrames;
 
-    virtual void send(uint32_t id, uint8_t* data, uint8_t len, bool extended, bool ss = true, bool rtr = false) override {
+    virtual void send(uint32_t id, uint8_t* data, uint8_t len, CanFrame extended, CanSS ss = CanSS::Singleshot, CanReq rtr = CanReq::Command) override {
         printf("MockCanInterface: Sending frame with ID: %08X, Length: %d ", id, len);
         printHex("data: ", data, len);
-        SentFrame frame;
+        CanMessage frame;
         frame.id = id;
         frame.len = len;
         memcpy(frame.data, data, len);
         sentFrames.push_back(frame);
     }
+    virtual bool readOne(CanMessage&, uint32_t timeout_ms) override { return false; }
 };
 
 class MockSerial : public SerialInterface {

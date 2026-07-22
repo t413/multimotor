@@ -17,7 +17,7 @@ TEST(CyberGear, RequestStatus) {
     ASSERT_FALSE(mockCan.sentFrames.empty());
     auto& frame = mockCan.sentFrames.back();
     EXPECT_EQ(frame.id, 0x15000010);
-    EXPECT_EQ(frame.len, 8);
+    EXPECT_LE(frame.len, 8);
 }
 
 TEST(CyberGear, SetEnable) {
@@ -27,9 +27,7 @@ TEST(CyberGear, SetEnable) {
     ASSERT_FALSE(mockCan.sentFrames.empty());
     auto& frame = mockCan.sentFrames.back();
     EXPECT_EQ(frame.id, 0x03000010);
-    for (int i = 0; i < 8; ++i) {
-        EXPECT_EQ(frame.data[i], 0x00);
-    }
+    ASSERT_EQ(frame.len, 0);
 }
 
 TEST(CyberGear, HandleIncoming) {

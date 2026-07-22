@@ -21,3 +21,8 @@ protected:
     uint8_t driveCount_ = 0;
     CanInterface* interface_ = nullptr;
 };
+
+#ifndef ARDUINO
+uint32_t micros();
+void delayMicroseconds(uint32_t);
+#endif

@@ -55,11 +55,23 @@ bool CanDriveManager::readOnce(uint32_t now, uint32_t timeout_us) {
 
 uint8_t CanDriveManager::iterate(uint32_t now, uint32_t timeout_ms) {
     uint8_t ret = 0;
-    auto can = (CanEsp32Twai*) interface_;
     CanMessage msg;
-    while (can && can->readOne(msg, ret == 0 ? timeout_ms : 0)) {
+    while (interface_ && interface_->readOne(msg, ret == 0 ? timeout_ms : 0)) {
         handleIncoming(msg.id, msg.data, msg.len, now);
         ++ret;
     }
     return ret;
 }
+
+#ifndef ARDUINO
+#include <sys/time.h>
+#include <unistd.h>
+uint32_t micros() {
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return (uint32_t)(tv.tv_sec * 1000000 + tv.tv_usec);
+}
+void delayMicroseconds(uint32_t microseconds) {
+    usleep(microseconds);
+}
+#endif
