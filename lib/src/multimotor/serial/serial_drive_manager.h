@@ -5,7 +5,7 @@
 class SerialDriveManager : public DriveManager {
 public:
     SerialDriveManager() { }
-    // SerialInterface* getInterface() const { return interface_; }
+    static constexpr uint8_t LX_DEFAULT_ID = 0x01;
     void beginSinglePin(SerialInterface* port, int txRxPin);
     void beginDualPins(SerialInterface* port, int txPin, int rxPin);
 
@@ -20,6 +20,9 @@ public:
     virtual bool handleIncoming(uint32_t id, uint8_t const* data, uint8_t len, uint32_t now) override;
     virtual bool readOnce(uint32_t now, uint32_t timeout_us) override;
     virtual uint8_t iterate(uint32_t now, uint32_t timeout_ms) override;
+
+    MotorDrive* findAtAddr(uint8_t id = LX_DEFAULT_ID);
+    MotorDrive* findAtDefaultId() override { return findAtAddr(LX_DEFAULT_ID); }
 
     void write(uint8_t const* data, uint8_t len);
 

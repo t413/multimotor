@@ -46,29 +46,28 @@ class RobStrideDriver : public MotorDrive {
     bool enabled_ = false;
 
 public:
-    RobStrideDriver(uint8_t id, CanInterface* can);
+    RobStrideDriver(uint8_t id, CanInterface* can, const char* name);
 
     // MotorDrive interface implementation
     uint32_t getId() const override { return id_; }
-    void requestStatus() override;
-    void setMode(MotorMode mode) override;
-    void setSetpoint(MotorMode mode, float value) override;
+    bool requestStatus() override;
+    bool setMode(MotorMode mode) override;
+    bool setSetpoint(MotorMode mode, float value) override;
     bool handleIncoming(uint32_t id, uint8_t const* data, uint8_t len, uint32_t now) override;
     uint32_t getLastStatusTime() const override { return lastStatusTime_; }
     uint32_t getLastFaults() const override { return lastFaults_; }
     MotorState getMotorState() const override { return lastStatus_; }
-    void fetchVBus() override;
+    bool fetchVBus() override;
     float getVBus() const override { return lastVBus_; }
 
     // RobStride specific methods
-    void setRobStrideMode(RobStrideCtrlMode mode);
-    void enableMotor();
-    void disableMotor();
-    void setZeroPosition();
-    void motionControl(float position, float velocity, float kp, float kd, float torque);
+    bool setRobStrideMode(RobStrideCtrlMode mode);
+    bool enable(bool en = true);
+    bool setZeroPosition();
+    bool motionControl(float position, float velocity, float kp, float kd, float torque);
 
 private:
-    void send(RobStrideCmdType cmd, uint8_t* data, uint8_t len, CanSS ss = CanSS::Singleshot, CanReq rtr = CanReq::Command);
+    bool send(RobStrideCmdType cmd, uint8_t* data, uint8_t len, CanSS ss = CanSS::Singleshot, CanReq rtr = CanReq::Command);
     uint16_t floatToUint(float x, float x_min, float x_max, int bits);
     float uintToFloat(uint16_t x_int, float x_min, float x_max, int bits);
 };

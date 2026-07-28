@@ -39,24 +39,27 @@ class ODriveDriver : public MotorDrive {
     MotorState lastStatus_; // Holds the state of the motor
     MotorMode lastSentMode_ = MotorMode::Unknown;
 public:
-    ODriveDriver(uint8_t id, CanInterface* can);
+    ODriveDriver(uint8_t id, CanInterface* can, const char* name);
 
     //contract
     uint32_t getId() const override { return id_; }
-    void requestStatus() override;
-    void setMode(MotorMode) override;
-    void setSetpoint(MotorMode, float) override;
+    bool requestStatus() override;
+    bool setMode(MotorMode) override;
+    bool setSetpoint(MotorMode, float) override;
     bool handleIncoming(uint32_t id, uint8_t const* data, uint8_t len, uint32_t now) override;
     uint32_t getLastStatusTime() const override { return lastStatusTime_; }
     uint32_t getLastFaults() const override { return lastFaults_; }
 
     MotorState getMotorState() const override { return lastStatus_; }
-    void setOdriveMode(OdriveCtrlMode);
-    void setOdriveEnable(bool enable);
-    void clearErrors();
-    void send(CmdIDs cmd, uint8_t* data, uint8_t len = 8, CanSS ss = CanSS::Singleshot, CanReq rtr = CanReq::Command);
+    bool setOdriveMode(OdriveCtrlMode);
+    bool setOdriveEnable(bool enable);
+    bool clearErrors();
+    bool send(CmdIDs cmd, uint8_t* data, uint8_t len = 8, CanSS ss = CanSS::Singleshot, CanReq rtr = CanReq::Command);
 
-    void fetchVBus() override;
+    bool fetchVBus() override;
     float getVBus() const override { return lastVolt_; }
+    bool ping(int timeout_ms = 100) override;
+    MotorDrive* makeDuplicate(uint8_t id) const override;
+    bool writeNewId(uint8_t newId, bool sendToDrive = true) override;
 };
 

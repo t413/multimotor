@@ -13,35 +13,38 @@ constexpr uint8_t LX16A_BROADCAST_ID = 0xFE;
 
 class LXServo : public MotorDrive {
 public:
-    LXServo(uint8_t id, SerialDriveManager* bus);
+    LXServo(uint8_t id, SerialDriveManager* bus, const char* name);
 
     // MotorDrive interface
-    void requestStatus() override;
-    void setMode(MotorMode mode) override;
-    void setSetpoint(MotorMode mode, float value) override;
+    bool requestStatus() override;
+    bool setMode(MotorMode mode) override;
+    bool setSetpoint(MotorMode mode, float value) override;
     bool handleIncoming(uint32_t id, uint8_t const* data, uint8_t len, uint32_t now) override; // Handles payload for this servo
     uint32_t getLastStatusTime() const override { return lastStatusTime_; }
     uint32_t getLastFaults() const override { return lastFaults_; }
     MotorState getMotorState() const override { return lastStatus_; }
-    void fetchVBus() override;
+    bool fetchVBus() override;
     float getVBus() const override { return voltage_; }
 
     // LX16A specific methods
-    void requestPosition();
-    void requestTemp();
-    void movePosTime(int16_t ticks, int16_t time);
-    void moveSpeed(int16_t speed);
-    void setAngleLimits(float minDeg, float maxDeg);
-    void setId(uint8_t newId);
+    bool requestPosition();
+    bool requestTemp();
+    bool movePosTime(int16_t ticks, int16_t time);
+    bool moveSpeed(int16_t speed);
+    bool setAngleLimits(float minDeg, float maxDeg);
     uint32_t getId() const override { return id_; }
-    void stop();
+    bool stop();
     static ParseResult parsePacket(uint8_t const* data, uint8_t len);
+
+    MotorDrive* makeDuplicate(uint8_t id) const override;
+    bool writeNewId(uint8_t newId, bool sendToDrive = true) override;
+    bool ping(int timeout_ms = 100) override;
 
 protected:
     float ticksToAngle(int32_t ticks) { return ticks * 0.24f; }
     uint16_t angleToTicks(float angle) { return (uint16_t)(angle / 0.24f); }
 
-    void enable(bool en = true);
+    bool enable(bool en = true);
     int buildPacket(uint8_t* txbuf, uint8_t cmd, const uint8_t* params, int param_cnt, uint8_t id);
     bool sendCommand(uint8_t cmd, const uint8_t* params, int param_cnt, bool expectResponse = false, uint32_t timeout_us = 5000);
 

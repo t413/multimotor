@@ -15,23 +15,26 @@ class CyberGearDriver : public MotorDrive {
     float vbus_ = 0.0f;  // Cached VBUS value
 
 public:
-    CyberGearDriver(uint8_t id, CanInterface* can);
+    CyberGearDriver(uint8_t id, CanInterface* can, const char* name);
 
     //contract
     uint32_t getId() const override { return id_; }
-    void requestStatus() override;
-    void setMode(MotorMode) override;
-    void setSetpoint(MotorMode, float) override;
+    bool requestStatus() override;
+    bool setMode(MotorMode) override;
+    bool setSetpoint(MotorMode, float) override;
     bool handleIncoming(uint32_t id, uint8_t const* data, uint8_t len, uint32_t now) override;
     uint32_t getLastStatusTime() const override { return lastStatusTime_; }
     uint32_t getLastFaults() const override { return lastFaults_; }
 
-    void send(CGCmds cmd, uint8_t* data, uint8_t len, CanSS ss = CanSS::Singleshot);
+    bool send(CGCmds cmd, uint8_t* data, uint8_t len, CanSS ss = CanSS::Singleshot);
     MotorState getMotorState() const override { return lastStatus_; }
-    void setCyberMode(uint8_t mode);
-    void setEnable(bool enable);
+    bool setCyberMode(uint8_t mode);
+    bool setEnable(bool enable);
 
-    void fetchVBus() override;
+    bool fetchVBus() override;
     float getVBus() const override { return vbus_; }
+    bool ping(int timeout_ms = 100) override;
+    MotorDrive* makeDuplicate(uint8_t id) const override;
+    bool writeNewId(uint8_t newId, bool sendToDrive = true) override;
 };
 

@@ -18,15 +18,24 @@ struct MotorState {
 };
 class MotorDrive {
 public:
+    MotorDrive(const char* name) : name_(name) { }
     virtual uint32_t getId() const = 0;
-    virtual void requestStatus() = 0;
-    virtual void setMode(MotorMode mode) = 0;
-    virtual void setSetpoint(MotorMode, float) = 0;
+    virtual const char* getName() const { return name_; }
+    virtual bool requestStatus() = 0;
+    virtual bool setMode(MotorMode mode) = 0;
+    virtual bool setSetpoint(MotorMode, float) = 0;
     virtual bool handleIncoming(uint32_t id, uint8_t const* data, uint8_t len, uint32_t now) = 0;
     virtual uint32_t getLastStatusTime() const = 0;
     virtual uint32_t getLastFaults() const = 0;
 
     virtual MotorState getMotorState() const = 0;
-    virtual void fetchVBus() = 0;
+    virtual bool fetchVBus() = 0;
     virtual float getVBus() const = 0;
+
+    virtual MotorDrive* makeDuplicate(uint8_t id) const = 0;
+    virtual bool writeNewId(uint8_t newId, bool sendToDrive = true) = 0;  // sends ID-write command targeting current id_
+    virtual bool ping(int timeout_ms = 100) = 0; // sends a read cmd, returns true if it replies
+
+protected:
+    const char* name_ = nullptr;
 };

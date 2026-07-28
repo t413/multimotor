@@ -33,14 +33,14 @@ enum class CmdIDs : uint8_t {
     GetPowers             = 0x1d,
 };
 
-ODriveDriver::ODriveDriver(uint8_t id, CanInterface* can) : id_(id), can_(can) { }
+ODriveDriver::ODriveDriver(uint8_t id, CanInterface* can, const char* n) : MotorDrive(n), id_(id), can_(can) { }
 
 uint16_t mkID(uint8_t id, CmdIDs cmd) {
     return (id << 5) | (uint16_t) cmd;
 }
 
-void ODriveDriver::send(CmdIDs cmd, uint8_t* data, uint8_t len, CanSS ss, CanReq rtr) {
-    if (can_) can_->send(mkID(id_, (CmdIDs) cmd), data, len, CanFrame::Standard, ss, rtr);
+bool ODriveDriver::send(CmdIDs cmd, uint8_t* data, uint8_t len, CanSS ss, CanReq rtr) {
+    return can_? can_->send(mkID(id_, (CmdIDs) cmd), data, len, CanFrame::Standard, ss, rtr) : false;
 }
 
 //get different combinations of payload
@@ -51,57 +51,66 @@ union Payload {
     float    floats[2];
 };
 
-void ODriveDriver::requestStatus() {
-    send(CmdIDs::GetEncoderEstimates, NULL, 0, CanSS::Singleshot, CanReq::RequestReply); //single shot, request-to-receive
+bool ODriveDriver::requestStatus() {
+    return send(CmdIDs::GetEncoderEstimates, NULL, 0, CanSS::Singleshot, CanReq::RequestReply); //single shot, request-to-receive
 }
 
-void ODriveDriver::fetchVBus() {
-    send(CmdIDs::GetBusVoltageCurrent, NULL, 0, CanSS::Singleshot, CanReq::RequestReply);
+bool ODriveDriver::fetchVBus() {
+    return send(CmdIDs::GetBusVoltageCurrent, NULL, 0, CanSS::Singleshot, CanReq::RequestReply);
 }
 
-void ODriveDriver::setOdriveMode(OdriveCtrlMode mode) {
+bool ODriveDriver::ping(int timeout_ms) {
+    if (! requestStatus()) return false;
+    CanMessage msg;
+    if (!can_->readOne(msg, timeout_ms)) return false;
+    return msg.id == id_;
+}
+
+bool ODriveDriver::setOdriveMode(OdriveCtrlMode mode) {
     Payload p;
     p.dwords[0] = (uint32_t) mode;
     p.dwords[1] = 1; //passtrough input mode
-    send(CmdIDs::SetControllerMode, p.bytes, 8, CanSS::Retry); //no single shot (enables retries)
+    return send(CmdIDs::SetControllerMode, p.bytes, 8, CanSS::Retry); //no single shot (enables retries)
 }
 
-void ODriveDriver::clearErrors() {
+bool ODriveDriver::clearErrors() {
     Payload p;
     p.dwords[0] = 1; // Clear all errors
-    send(CmdIDs::ClearErrors, p.bytes, 8, CanSS::Retry); //no single shot (enables retries)
+    return send(CmdIDs::ClearErrors, p.bytes, 8, CanSS::Retry); //no single shot (enables retries)
 }
 
-void ODriveDriver::setOdriveEnable(bool enable) {
+bool ODriveDriver::setOdriveEnable(bool enable) {
     if (lastFaults_) {
         DebugPrinter::log("ODrive %d faults %d detected, clearing first\n", id_, lastFaults_);
         clearErrors(); //clear errors before enabling
     }
     Payload p;
     p.dwords[0] = enable ? 8 : 1; //Closed loop control
-    send(CmdIDs::SetAxisState, p.bytes, 8, CanSS::Retry); //no single shot (enables retries)
+    return send(CmdIDs::SetAxisState, p.bytes, 8, CanSS::Retry); //no single shot (enables retries)
 }
 
-void ODriveDriver::setMode(MotorMode mode) {
+bool ODriveDriver::setMode(MotorMode mode) {
+    bool ret = false;
     if (mode == MotorMode::Disabled) {
-        setOdriveEnable(false); //disable before setting mode
+        ret = setOdriveEnable(false); //disable before setting mode
         lastSentMode_ = MotorMode::Disabled;
     } else {
         lastSentMode_ = mode;
         OdriveCtrlMode odriveMode = (mode == MotorMode::Speed) ? OdriveCtrlMode::Velocity :
                        (mode == MotorMode::Current) ? OdriveCtrlMode::Torque :
                        OdriveCtrlMode::Position;
-        setOdriveMode(odriveMode);
-        setOdriveEnable(true);
+        ret = setOdriveMode(odriveMode);
+        ret &= setOdriveEnable(true);
     }
+    return ret;
 }
 
-void ODriveDriver::setSetpoint(MotorMode mode, float value) {
+bool ODriveDriver::setSetpoint(MotorMode mode, float value) {
     Payload p;
     p.floats[0] = value;
     CmdIDs cmd = (mode == MotorMode::Position) ? CmdIDs::SetInputPos :
                  (mode == MotorMode::Speed)    ? CmdIDs::SetInputVel : CmdIDs::SetInputTorque;
-    send(cmd, p.bytes);
+    return send(cmd, p.bytes);
 }
 
 bool ODriveDriver::handleIncoming(uint32_t id, uint8_t const* data, uint8_t len, uint32_t now) {
@@ -142,5 +151,12 @@ bool ODriveDriver::handleIncoming(uint32_t id, uint8_t const* data, uint8_t len,
     return true;
 }
 
+MotorDrive* ODriveDriver::makeDuplicate(uint8_t newId) const {
+    return new ODriveDriver(newId, can_, "dupe");
+}
 
+bool ODriveDriver::writeNewId(uint8_t newId, bool sendToDrive) {
+    //TODO
+    return false;
+}
 

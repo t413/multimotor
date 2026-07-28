@@ -67,61 +67,70 @@ MotorMode toMotorMode(CyberGearMode mode) {
 }
 
 
-CyberGearDriver::CyberGearDriver(uint8_t id, CanInterface* can) : id_(id), can_(can) { }
+CyberGearDriver::CyberGearDriver(uint8_t id, CanInterface* can, const char* n) : MotorDrive(n), id_(id), can_(can) { }
 
 uint32_t mkID(uint8_t cmd, uint8_t opthi, uint8_t optlo, uint8_t id) {
     return (cmd << 24) | (opthi << 16) | (optlo << 8) | id;
 }
 
-void CyberGearDriver::send(CGCmds cmd, uint8_t* data, uint8_t len, CanSS ss) {
-    if (!can_) return;
+bool CyberGearDriver::send(CGCmds cmd, uint8_t* data, uint8_t len, CanSS ss) {
+    if (!can_) return false;
     if (lastCommsTime_ == 0) ss = CanSS::Singleshot; //force no-retry until we've heard anything back
     //no RTR, seems to break things with cybergear CAN. Always use CanReq::Command.
-    can_->send(mkID((uint8_t)cmd, 0, 0, id_), data, len, CanFrame::Extended, ss, CanReq::Command);
+    return can_->send(mkID((uint8_t)cmd, 0, 0, id_), data, len, CanFrame::Extended, ss, CanReq::Command);
 }
 
 
-void CyberGearDriver::requestStatus() {
-    send(CGCmds::Fault, nullptr, 0, CanSS::Retry);
+bool CyberGearDriver::requestStatus() {
+    return send(CGCmds::Fault, nullptr, 0, CanSS::Retry);
 }
 
-void CyberGearDriver::setCyberMode(uint8_t mode) {
+bool CyberGearDriver::ping(int timeout_ms) {
+    if (! requestStatus()) return false;
+    CanMessage msg;
+    if (!can_->readOne(msg, timeout_ms)) return false;
+    return msg.id == id_;
+}
+
+bool CyberGearDriver::setCyberMode(uint8_t mode) {
     uint8_t data[8] = { AddrRunMode & 0x00FF, AddrRunMode >> 8, 0x00, 0x00, (uint8_t) mode, 0x00, 0x00, 0x00};
-    send(CGCmds::WriteParamUpper, data, 8, CanSS::Retry);
+    return send(CGCmds::WriteParamUpper, data, 8, CanSS::Retry);
 }
 
-void CyberGearDriver::setEnable(bool enable) {
-    send(enable? CGCmds::Enable : CGCmds::Stop, nullptr, 0, CanSS::Retry);
+bool CyberGearDriver::setEnable(bool enable) {
+    return send(enable? CGCmds::Enable : CGCmds::Stop, nullptr, 0, CanSS::Retry);
 }
 
-void CyberGearDriver::setMode(MotorMode mode) {
+bool CyberGearDriver::setMode(MotorMode mode) {
+    bool ret = false;
     CyberGearMode out = toCyberGearMode(mode);
     if (out == CyberGearMode::Unknown) {
-        setEnable(false); //disable if unknown mode
+        ret = setEnable(false); //disable if unknown mode
     } else {
-        setCyberMode((uint8_t)out);
-        setEnable(true);
+        ret = setCyberMode((uint8_t)out);
+        ret &= setEnable(true);
         lastStatus_.mode = mode;
     }
+    return ret;
 }
 
-void CyberGearDriver::setSetpoint(MotorMode mode, float value) {
+bool CyberGearDriver::setSetpoint(MotorMode mode, float value) {
     uint16_t addr;
     switch (mode) {
         case MotorMode::Position: addr = AddrPosSetpoint; break;
         case MotorMode::Speed:    addr = AddrSpeedSetpoint; break;
         case MotorMode::Current:  addr = AddrCurrentSetpoint; break;
-        default: return;
+        default: return false;
     }
     uint8_t data[8] = {0};
     memcpy(&data[0], &addr, 2);
     memcpy(&data[4], &value, 4);
-    send(CGCmds::WriteParamUpper, data, 8, CanSS::Singleshot);
+    return send(CGCmds::WriteParamUpper, data, 8, CanSS::Singleshot);
 }
 
-void CyberGearDriver::fetchVBus() {
+bool CyberGearDriver::fetchVBus() {
     uint8_t data[8] = { AddrVBUSfloat & 0x00FF, AddrVBUSfloat >> 8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-    send(CGCmds::ReadParamLower, data, 8, CanSS::Retry);
+    return send(CGCmds::ReadParamLower, data, 8, CanSS::Retry);
 }
 
 bool CyberGearDriver::handleIncoming(uint32_t id, uint8_t const* data, uint8_t len, uint32_t now) {
@@ -175,4 +184,12 @@ bool CyberGearDriver::handleIncoming(uint32_t id, uint8_t const* data, uint8_t l
     return false;
 }
 
+MotorDrive* CyberGearDriver::makeDuplicate(uint8_t newId) const {
+    return new CyberGearDriver(newId, can_, "dupe");
+}
+
+bool CyberGearDriver::writeNewId(uint8_t newId, bool sendToDrive) {
+    //TODO
+    return false;
+}
 

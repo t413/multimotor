@@ -10,11 +10,11 @@ union RobStridePayload {
     float floats[2];
 };
 
-RobStrideDriver::RobStrideDriver(uint8_t id, CanInterface* can) : id_(id), can_(can) {}
+RobStrideDriver::RobStrideDriver(uint8_t id, CanInterface* can, const char* n) : MotorDrive(n), id_(id), can_(can) {}
 
-void RobStrideDriver::send(RobStrideCmdType cmd, uint8_t* data, uint8_t len, CanSS ss, CanReq rtr) {
+bool RobStrideDriver::send(RobStrideCmdType cmd, uint8_t* data, uint8_t len, CanSS ss, CanReq rtr) {
     uint32_t canId = (uint32_t(cmd) << 24) | (0x1F << 8) | id_;  // cmd | master_id | motor_id
-    if (can_) can_->send(canId, data, len, CanFrame::Extended, ss, rtr);
+    return can_? can_->send(canId, data, len, CanFrame::Extended, ss, rtr) : false;
 }
 
 uint16_t RobStrideDriver::floatToUint(float x, float x_min, float x_max, int bits) {
@@ -31,36 +31,33 @@ float RobStrideDriver::uintToFloat(uint16_t x_int, float x_min, float x_max, int
     return ((float)x_int) * span / ((float)((1 << bits) - 1)) + offset;
 }
 
-void RobStrideDriver::requestStatus() {
+bool RobStrideDriver::requestStatus() {
     uint8_t data[8] = {0};
-    send(RobStrideCmdType::MotorRequest, data, 8, CanSS::Retry, CanReq::RequestReply);
+    return send(RobStrideCmdType::MotorRequest, data, 8, CanSS::Retry, CanReq::RequestReply);
 }
 
-void RobStrideDriver::fetchVBus() {
-    // RobStride doesn't have separate VBus command, handled in status
+bool RobStrideDriver::fetchVBus() {
+    return true; // RobStride doesn't have separate VBus command, handled in status
 }
 
-void RobStrideDriver::setRobStrideMode(RobStrideCtrlMode mode) {
+bool RobStrideDriver::setRobStrideMode(RobStrideCtrlMode mode) {
     uint8_t data[8] = {0};
     data[0] = (uint8_t)mode;
-    send(RobStrideCmdType::ControlMode, data, 8, CanSS::Retry, CanReq::Command);
+    return send(RobStrideCmdType::ControlMode, data, 8, CanSS::Retry, CanReq::Command);
 }
 
-void RobStrideDriver::enableMotor() {
+bool RobStrideDriver::enable(bool en) {
     uint8_t data[8] = {0};
-    send(RobStrideCmdType::MotorEnable, data, 8, CanSS::Retry, CanReq::Command);
-    enabled_ = true;
+    auto type = en? RobStrideCmdType::MotorEnable : RobStrideCmdType::MotorStop;
+    if (!send(type, data, 8, CanSS::Retry, CanReq::Command)) return false;
+    enabled_ = en;
+    return true;
 }
 
-void RobStrideDriver::disableMotor() {
-    uint8_t data[8] = {0};
-    send(RobStrideCmdType::MotorStop, data, 8, CanSS::Retry, CanReq::Command);
-    enabled_ = false;
-}
-
-void RobStrideDriver::setMode(MotorMode mode) {
+bool RobStrideDriver::setMode(MotorMode mode) {
+    bool ret = false;
     if (mode == MotorMode::Disabled) {
-        disableMotor();
+        ret = enable(false);
         lastSentMode_ = MotorMode::Disabled;
     } else {
         lastSentMode_ = mode;
@@ -69,11 +66,12 @@ void RobStrideDriver::setMode(MotorMode mode) {
                                    (mode == MotorMode::Position) ? RobStrideCtrlMode::Position :
                                    RobStrideCtrlMode::MotionControl;
         setRobStrideMode(robMode);
-        enableMotor();
+        ret = enable(true);
     }
+    return ret;
 }
 
-void RobStrideDriver::motionControl(float position, float velocity, float kp, float kd, float torque) {
+bool RobStrideDriver::motionControl(float position, float velocity, float kp, float kd, float torque) {
     uint8_t data[8];
     uint16_t pos_int = floatToUint(position, ROBSTRIDE_P_MIN, ROBSTRIDE_P_MAX, 16);
     uint16_t vel_int = floatToUint(velocity, ROBSTRIDE_V_MIN, ROBSTRIDE_V_MAX, 12);
@@ -90,22 +88,23 @@ void RobStrideDriver::motionControl(float position, float velocity, float kp, fl
     data[6] = ((kd_int & 0xF) << 4) | (torque_int >> 8);
     data[7] = torque_int & 0xFF;
 
-    send(RobStrideCmdType::MotionControl, data, 8, CanSS::Singleshot, CanReq::Command);
+    return send(RobStrideCmdType::MotionControl, data, 8, CanSS::Singleshot, CanReq::Command);
 }
 
-void RobStrideDriver::setSetpoint(MotorMode mode, float value) {
+bool RobStrideDriver::setSetpoint(MotorMode mode, float value) {
     if (mode == MotorMode::Position) {
-        motionControl(value, 0, 50, 1, 0);  // Position with default gains
+        return motionControl(value, 0, 50, 1, 0);  // Position with default gains
     } else if (mode == MotorMode::Speed) {
-        motionControl(0, value, 0, 1, 0);  // Velocity control
+        return motionControl(0, value, 0, 1, 0);  // Velocity control
     } else if (mode == MotorMode::Current) {
-        motionControl(0, 0, 0, 0, value);  // Torque control
+        return motionControl(0, 0, 0, 0, value);  // Torque control
     }
+    return false;
 }
 
-void RobStrideDriver::setZeroPosition() {
+bool RobStrideDriver::setZeroPosition() {
     uint8_t data[8] = {0};
-    send(RobStrideCmdType::SetPosZero, data, 8, CanSS::Retry, CanReq::Command);
+    return send(RobStrideCmdType::SetPosZero, data, 8, CanSS::Retry, CanReq::Command);
 }
 
 bool RobStrideDriver::handleIncoming(uint32_t id, uint8_t const* data, uint8_t len, uint32_t now) {

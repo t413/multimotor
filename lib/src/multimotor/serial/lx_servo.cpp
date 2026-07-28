@@ -24,12 +24,9 @@ constexpr uint8_t LX16A_SERVO_ANGLE_LIMIT_READ = 21;
 #define LX_MIN_PACKET_LENGTH 4
 
 
-LXServo::LXServo(uint8_t id, SerialDriveManager* bus)
-    : id_(id), bus_(bus) {
+LXServo::LXServo(uint8_t id, SerialDriveManager* bus, const char* name) : MotorDrive(name), id_(id), bus_(bus) {
     bus_->addDrive(this);
 }
-
-// lx_servo.cpp
 
 int LXServo::buildPacket(uint8_t* txbuf, uint8_t cmd, const uint8_t* params, int param_cnt, uint8_t id) {
     if (param_cnt < 0 || param_cnt > 4) return -1;
@@ -63,54 +60,53 @@ bool LXServo::sendCommand(uint8_t cmd, const uint8_t* params, int param_cnt, boo
     return handleIncoming(id_, replyData, replyLen, millis());
 }
 
-void LXServo::requestStatus() {
+bool LXServo::requestStatus() {
     uint32_t now = millis();
-    requestPosition();
+    bool ret = requestPosition();
     //TODO calc velocity in handle method
     if (!lastTempRead_ || (now - lastTempRead_) > 5000)
         requestTemp();
+    return ret;
 }
 
-void LXServo::requestPosition() {
+bool LXServo::requestPosition() {
     uint8_t data[3] = {0};
-    sendCommand(LX16A_SERVO_POS_READ, data, 2, true);
+    return sendCommand(LX16A_SERVO_POS_READ, data, 2, true);
 }
 
-void LXServo::requestTemp() {
+bool LXServo::requestTemp() {
     uint8_t data[1] = {0};
-    sendCommand(LX16A_SERVO_TEMP_READ, data, 1, true);
+    return sendCommand(LX16A_SERVO_TEMP_READ, data, 1, true);
 }
 
-void LXServo::enable(bool en) {
+bool LXServo::enable(bool en) {
     uint8_t enableParams[] = {(uint8_t)(en? 1 : 0)};
-    sendCommand(LX16A_SERVO_LOAD_OR_UNLOAD_WRITE, enableParams, 1, false);
+    return sendCommand(LX16A_SERVO_LOAD_OR_UNLOAD_WRITE, enableParams, 1, false);
     enabled_ = en;
 }
 
-void LXServo::setMode(MotorMode mode) {
+bool LXServo::setMode(MotorMode mode) {
     switch (mode) {
         case MotorMode::Position: {
             // Enable servo mode
             uint8_t servoParams[] = {0, 0, 0, 0};
             sendCommand(LX16A_SERVO_OR_MOTOR_MODE_WRITE, servoParams, 4, false);
-            enable();
-            break;
+            return enable();
         }
         case MotorMode::Speed: {
             lastStatus_.mode = MotorMode::Speed;
             enabled_ = true;
-            enable();
-            break;
+            return enable();
         }
         default: {
-            enable(false);
-            break;
+            return enable(false);
         }
     }
 }
 
-void LXServo::setSetpoint(MotorMode mode, float value) {
-    if (!enabled_) return;
+bool LXServo::setSetpoint(MotorMode mode, float value) {
+    if (!enabled_) return false;
+    bool ret = false;
 
     if (mode == MotorMode::Position) {
         // Clamp to limits
@@ -120,39 +116,40 @@ void LXServo::setSetpoint(MotorMode mode, float value) {
 
         uint16_t ticks = angleToTicks(angle);
         uint16_t time = 0; // Move as fast as possible
-        movePosTime(ticks, time);
+        ret = movePosTime(ticks, time);
     } else if (mode == MotorMode::Speed) {
         // Convert speed to motor mode command
-        moveSpeed((int16_t)(value * 60));
+        ret = moveSpeed((int16_t)(value * 100));
         lastStatus_.velocity = value;
     }
+    return ret;
 }
 
-void LXServo::movePosTime(int16_t ticks, int16_t time) {
+bool LXServo::movePosTime(int16_t ticks, int16_t time) {
     uint8_t params[4];
     memcpy(params, &ticks, 2);
     memcpy(params + 2, &time, 2);
-    sendCommand(LX16A_SERVO_MOVE_TIME_WRITE, params, 4, false);
+    return sendCommand(LX16A_SERVO_MOVE_TIME_WRITE, params, 4, false);
 }
 
-void LXServo::moveSpeed(int16_t speed) {
-    speed = constrain(speed, -1000, 1000);
+bool LXServo::moveSpeed(int16_t speed) {
+    speed = -constrain(speed, -1000, 1000);
     uint8_t params[4] = {1, 0};
     memcpy(params + 2, &speed, 2);
-    sendCommand(LX16A_SERVO_OR_MOTOR_MODE_WRITE, params, 4, false);
+    return sendCommand(LX16A_SERVO_OR_MOTOR_MODE_WRITE, params, 4, false);
 }
 
-void LXServo::fetchVBus() {
+bool LXServo::fetchVBus() {
     uint8_t data[3] = {0};
-    sendCommand(LX16A_SERVO_VIN_READ, data, 2, true);
+    return sendCommand(LX16A_SERVO_VIN_READ, data, 2, true);
 }
 
-void LXServo::stop() {
+bool LXServo::stop() {
     uint8_t params[1];
-    sendCommand(LX16A_SERVO_MOVE_STOP, params, 1, false);
+    return sendCommand(LX16A_SERVO_MOVE_STOP, params, 1, false);
 }
 
-void LXServo::setAngleLimits(float minDeg, float maxDeg) {
+bool LXServo::setAngleLimits(float minDeg, float maxDeg) {
     minAngleDeg_ = minDeg;
     maxAngleDeg_ = maxDeg;
 
@@ -162,13 +159,26 @@ void LXServo::setAngleLimits(float minDeg, float maxDeg) {
     uint8_t params[4];
     memcpy(params, &minTicks, 2);
     memcpy(params + 2, &maxTicks, 2);
-    sendCommand(LX16A_SERVO_ANGLE_LIMIT_WRITE, params, 4, false);
+    return sendCommand(LX16A_SERVO_ANGLE_LIMIT_WRITE, params, 4, false);
 }
 
-void LXServo::setId(uint8_t newId) {
-    uint8_t params[] = {newId};
-    sendCommand(LX16A_SERVO_ID_WRITE, params, 1, false);
-    id_ = newId; // Optimistically update
+MotorDrive* LXServo::makeDuplicate(uint8_t newId) const {
+    return new LXServo(newId, bus_, "dupe");
+}
+
+bool LXServo::writeNewId(uint8_t newId, bool sendToDrive) {
+    if (sendToDrive) {
+        uint8_t params[] = {newId};
+        if (!sendCommand(LX16A_SERVO_ID_WRITE, params, 1, false))
+            return false;
+    }
+    id_ = newId;
+    return true;
+}
+
+bool LXServo::ping(int timeout_ms) {
+    uint8_t dummy[2] = {0};
+    return sendCommand(LX16A_SERVO_POS_READ, dummy, 2, true, timeout_ms); // any read cmd works
 }
 
 bool LXServo::handleIncoming(uint32_t, uint8_t const* data, uint8_t len, uint32_t now) {
