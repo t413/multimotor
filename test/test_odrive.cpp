@@ -6,12 +6,12 @@
 
 TEST(ODriveDriver, constructor) {
     MockCanInterface mockCan;
-    ODriveDriver driver(1, &mockCan);
+    ODriveDriver driver(1, &mockCan, "test");
 }
 
 TEST(ODriveDriver, RequestStatus) {
     MockCanInterface mockCan;
-    ODriveDriver driver(16, &mockCan);
+    ODriveDriver driver(16, &mockCan, "test");
     printf("Requesting status...\n");
     fflush(stdout);
     driver.requestStatus();
@@ -23,7 +23,7 @@ TEST(ODriveDriver, RequestStatus) {
 
 TEST(ODriveDriver, SetEnable) {
     MockCanInterface mockCan;
-    ODriveDriver driver(16, &mockCan);
+    ODriveDriver driver(16, &mockCan, "test");
     driver.setMode(MotorMode::Position);
     ASSERT_FALSE(mockCan.sentFrames.empty());
     auto& frame = mockCan.sentFrames.back();
@@ -35,7 +35,7 @@ TEST(ODriveDriver, SetEnable) {
 
 TEST(ODriveDriver, HandleIncoming_heartbeat) {
     MockCanInterface mockCan;
-    ODriveDriver driver(16, &mockCan);
+    ODriveDriver driver(16, &mockCan, "test");
 
     // Prepare a realistic heartbeat frame
     uint32_t can_id = (0x01) + (16 << 5);  // (heartbeat type) + (node_id 16)

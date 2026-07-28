@@ -92,3 +92,22 @@ void DebugPrinter::setPlatformSpecific(void*) {
 }
 
 #endif
+
+#ifndef ARDUINO
+#include <chrono>
+#include <thread>
+uint32_t millis() {
+    // Simple millis implementation using C++11 chrono
+    using namespace std::chrono;
+    static auto start = steady_clock::now();
+    return duration_cast<milliseconds>(steady_clock::now() - start).count();
+}
+uint32_t micros() {
+    using namespace std::chrono;
+    static auto start = steady_clock::now();
+    return duration_cast<microseconds>(steady_clock::now() - start).count();
+}
+void delay(uint32_t ms) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(ms));
+}
+#endif

@@ -5,12 +5,12 @@
 
 TEST(CyberGear, constructor) {
     MockCanInterface mockCan;
-    CyberGearDriver driver(1, &mockCan);
+    CyberGearDriver driver(1, &mockCan, "test");
 }
 
 TEST(CyberGear, RequestStatus) {
     MockCanInterface mockCan;
-    CyberGearDriver driver(16, &mockCan);
+    CyberGearDriver driver(16, &mockCan, "test");
     printf("Requesting status...\n");
     fflush(stdout);
     driver.requestStatus();
@@ -22,7 +22,7 @@ TEST(CyberGear, RequestStatus) {
 
 TEST(CyberGear, SetEnable) {
     MockCanInterface mockCan;
-    CyberGearDriver driver(16, &mockCan);
+    CyberGearDriver driver(16, &mockCan, "test");
     driver.setEnable(true);
     ASSERT_FALSE(mockCan.sentFrames.empty());
     auto& frame = mockCan.sentFrames.back();
@@ -32,7 +32,7 @@ TEST(CyberGear, SetEnable) {
 
 TEST(CyberGear, HandleIncoming) {
     MockCanInterface mockCan;
-    CyberGearDriver driver(16, &mockCan);
+    CyberGearDriver driver(16, &mockCan, "test");
 
 
     // Prepare a realistic status frame

@@ -7,14 +7,15 @@
 
 TEST(LxSerialDriver, constructor) {
     MockSerial comms;
-    SerialDriveManager bus(&comms);
-    LXServo servo(16, &bus);
+    SerialDriveManager bus;
+    LXServo servo(16, &bus, "test");
 }
 
 TEST(LxSerialDriver, WriteCommand) {
     MockSerial comms;
-    SerialDriveManager bus(&comms);
-    LXServo servo(16, &bus);
+    SerialDriveManager bus;
+    bus.beginDualPins(&comms, -1, -1);
+    LXServo servo(16, &bus, "test");
 
     // Test packet for SERVO_MOVE_TIME_WRITE command
     // ID: 16, Position: 500, Time: 1000

@@ -39,7 +39,6 @@ class RobStrideDriver : public MotorDrive {
     CanInterface* can_ = nullptr;
     uint32_t lastFaults_ = 0;
     uint32_t lastStatusTime_ = 0;
-    uint32_t lastBusVoltTime_ = 0;
     float lastVBus_ = 0.0f;
     MotorState lastStatus_;
     MotorMode lastSentMode_ = MotorMode::Disabled;

@@ -34,3 +34,9 @@ private:
     static DebugPrinter* instance_;
 };
 
+#ifndef ARDUINO
+uint32_t millis();
+uint32_t micros();
+void delay(uint32_t ms);
+#define constrain(amt,low,high) ((amt)<(low)?(low):((amt)>(high)?(high):(amt)))
+#endif

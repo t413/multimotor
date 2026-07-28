@@ -21,7 +21,6 @@ public:
     virtual bool readOnce(uint32_t now, uint32_t timeout_us) override;
     virtual uint8_t iterate(uint32_t now, uint32_t timeout_ms) override;
 
-    MotorDrive* findAtAddr(uint8_t id = LX_DEFAULT_ID);
     MotorDrive* findAtDefaultId() override { return findAtAddr(LX_DEFAULT_ID); }
 
     void write(uint8_t const* data, uint8_t len);

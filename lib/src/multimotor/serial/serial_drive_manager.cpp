@@ -24,7 +24,7 @@ void SerialDriveManager::beginDualPins(SerialInterface* port, int txPin, int rxP
     interface_ = port;
     if (!interface_)
         return;
-    uartSinglePin_ = GPIO_NUM_NC;
+    uartSinglePin_ = -1;
     #ifdef ARDUINO
     auto serial = (HardwareSerial*)interface_;
     serial->begin(115200, SERIAL_8N1, txPin, rxPin);
@@ -93,10 +93,12 @@ bool SerialDriveManager::waitForReply(int16_t id, uint32_t timeout_us, uint8_t c
 }
 
 bool SerialDriveManager::handleIncoming(uint32_t id, uint8_t const* indata, uint8_t inlen, uint32_t now) {
+    #ifdef ARDUINO
     Serial.printf("SerialDriveManager: unexpected %d bytes: ", inlen);
     for (uint8_t i = 0; i < inlen; ++i)
         Serial.printf("%02X ", indata[i]);
     Serial.printf("\n");
+    #endif
     return false;
 }
 
