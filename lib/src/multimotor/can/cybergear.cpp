@@ -189,7 +189,12 @@ MotorDrive* CyberGearDriver::makeDuplicate(uint8_t newId) const {
 }
 
 bool CyberGearDriver::writeNewId(uint8_t newId, bool sendToDrive) {
-    //TODO
-    return false;
+    bool ret = false;
+    if (sendToDrive) {
+        uint8_t data[8] = {1, 0, 0, 0, 0, 0, 0, 0};
+        uint32_t canId = mkID((uint8_t)CGCmds::SetCanId, newId, 0, id_);
+        ret = can_? can_->send(canId, data, 8, CanFrame::Extended, CanSS::Retry, CanReq::Command) : false;
+    } else { ret = true; }
+    id_ = newId;
+    return ret;
 }
-
