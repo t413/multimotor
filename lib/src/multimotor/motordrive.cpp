@@ -2,6 +2,7 @@
 #include "debugprint.h"
 
 bool MotorDrive::pingId(uint8_t id, uint32_t timeout) {
+    if (!validID(id)) return false;
     uint8_t originalId = getId();
     writeNewId(id, false);
     bool ret = ping(timeout);

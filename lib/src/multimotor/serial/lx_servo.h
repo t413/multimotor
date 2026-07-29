@@ -41,6 +41,7 @@ public:
     MotorDrive* makeDuplicate(int16_t id = -1) const override;
     bool writeNewId(uint8_t newId, bool sendToDrive = true) override;
     bool ping(int timeout_ms = 100) override;
+    bool validID(int id) const { return id >= 0 && id < LX16A_BROADCAST_ID; }
 
 protected:
     float ticksToAngle(int32_t ticks) { return ticks * 0.24f; }
