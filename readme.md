@@ -75,6 +75,6 @@ _Join my [3D Design Discord](https://3d.t413.com/go/discord?ref=gh-omni) and say
 
 ## Example Project
 
-See my rover controller [OmniCtrl](https://t413.com/go/omnictrl?ref=multimotor) and [Dug the robot](https://t413.com/go/dug-mw?ref=multimotor)_
+See my rover controller [OmniCtrl](https://t413.com/go/omnictrl?ref=multimotor) and [Dug the robot](https://t413.com/go/dug-mw?ref=multimotor)
 
 [![rover gif](https://github.com/user-attachments/assets/3abf20fa-31b0-4424-8c4f-44cd74c5599f)](https://t413.com/go/omnictrl?ref=multimotor)

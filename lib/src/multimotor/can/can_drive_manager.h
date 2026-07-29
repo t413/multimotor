@@ -5,18 +5,17 @@ class CanInterface;
 class CanDriveManager : public DriveManager {
 public:
     CanDriveManager(CanInterface* canInterface) : interface_(canInterface) {}
-    static constexpr uint8_t CG_DEFAULT_ID = 0x7D;
 
     virtual void addDrive(MotorDrive* drive) override;
     virtual MotorDrive* getDrive(uint8_t id) override;
     virtual MotorDrive* const* getDrives() const override { return drives_; }
     virtual uint8_t getCount() const override;
+    MotorDrive* first() const override { return driveCount_ > 0 ? drives_[0] : nullptr; }
 
     virtual bool handleIncoming(uint32_t id, uint8_t const* data, uint8_t len, uint32_t now) override;
     virtual bool readOnce(uint32_t now, uint32_t timeout_us) override;
     virtual uint8_t iterate(uint32_t now, uint32_t timeout_ms) override;
 
-    MotorDrive* findAtDefaultId() override { return findAtAddr(CG_DEFAULT_ID); }
 
 protected:
     static constexpr uint8_t MAX_DRIVES = 16;
