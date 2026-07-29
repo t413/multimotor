@@ -179,7 +179,7 @@ bool LXServo::writeNewId(uint8_t newId, bool sendToDrive) {
 
 bool LXServo::ping(int timeout_ms) {
     uint8_t dummy[2] = {0};
-    return sendCommand(LX16A_SERVO_POS_READ, dummy, 2, true, timeout_ms); // any read cmd works
+    return sendCommand(LX16A_SERVO_POS_READ, dummy, 2, true, timeout_ms * 1000); // any read cmd works
 }
 
 bool LXServo::handleIncoming(uint32_t, uint8_t const* data, uint8_t len, uint32_t now) {
