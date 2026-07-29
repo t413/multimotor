@@ -33,8 +33,8 @@ public:
     virtual bool fetchVBus() = 0;
     virtual float getVBus() const = 0;
 
-    virtual MotorDrive* makeDuplicate(uint8_t id) const = 0;
     virtual bool writeNewId(uint8_t newId, bool sendToDrive = true) = 0;  // sends ID-write command targeting current id_
+    virtual MotorDrive* makeDuplicate(int16_t id = -1) const = 0; //make new instance, -1 is default address
     virtual bool ping(int timeout_ms = 100) = 0; // sends a read cmd, returns true if it replies
 
 protected:

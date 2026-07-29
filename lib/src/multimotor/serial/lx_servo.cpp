@@ -162,7 +162,8 @@ bool LXServo::setAngleLimits(float minDeg, float maxDeg) {
     return sendCommand(LX16A_SERVO_ANGLE_LIMIT_WRITE, params, 4, false);
 }
 
-MotorDrive* LXServo::makeDuplicate(uint8_t newId) const {
+MotorDrive* LXServo::makeDuplicate(int16_t newId) const {
+    if (newId < 0) newId = DEFAULT_ID;
     return new LXServo(newId, bus_, "dupe");
 }
 

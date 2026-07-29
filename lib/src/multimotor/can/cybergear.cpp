@@ -184,7 +184,8 @@ bool CyberGearDriver::handleIncoming(uint32_t id, uint8_t const* data, uint8_t l
     return false;
 }
 
-MotorDrive* CyberGearDriver::makeDuplicate(uint8_t newId) const {
+MotorDrive* CyberGearDriver::makeDuplicate(int16_t newId) const {
+    if (newId < 0) newId = DEFAULT_ID;
     return new CyberGearDriver(newId, can_, "dupe");
 }
 

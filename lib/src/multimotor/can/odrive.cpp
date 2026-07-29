@@ -151,7 +151,8 @@ bool ODriveDriver::handleIncoming(uint32_t id, uint8_t const* data, uint8_t len,
     return true;
 }
 
-MotorDrive* ODriveDriver::makeDuplicate(uint8_t newId) const {
+MotorDrive* ODriveDriver::makeDuplicate(int16_t newId) const {
+    if (newId < 0) newId = DEFAULT_ID;
     return new ODriveDriver(newId, can_, "dupe");
 }
 

@@ -40,6 +40,7 @@ class ODriveDriver : public MotorDrive {
     MotorMode lastSentMode_ = MotorMode::Unknown;
 public:
     ODriveDriver(uint8_t id, CanInterface* can, const char* name);
+    static constexpr uint8_t DEFAULT_ID = 0x3f;
 
     //contract
     uint32_t getId() const override { return id_; }
@@ -59,7 +60,7 @@ public:
     bool fetchVBus() override;
     float getVBus() const override { return lastVolt_; }
     bool ping(int timeout_ms = 100) override;
-    MotorDrive* makeDuplicate(uint8_t id) const override;
+    MotorDrive* makeDuplicate(int16_t id = -1) const override;
     bool writeNewId(uint8_t newId, bool sendToDrive = true) override;
 };
 

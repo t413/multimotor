@@ -14,6 +14,7 @@ constexpr uint8_t LX16A_BROADCAST_ID = 0xFE;
 class LXServo : public MotorDrive {
 public:
     LXServo(uint8_t id, SerialDriveManager* bus, const char* name);
+    static constexpr uint8_t DEFAULT_ID = 0x01;
 
     // MotorDrive interface
     bool requestStatus() override;
@@ -37,7 +38,7 @@ public:
     bool stop();
     static ParseResult parsePacket(uint8_t const* data, uint8_t len);
 
-    MotorDrive* makeDuplicate(uint8_t id) const override;
+    MotorDrive* makeDuplicate(int16_t id = -1) const override;
     bool writeNewId(uint8_t newId, bool sendToDrive = true) override;
     bool ping(int timeout_ms = 100) override;
 
