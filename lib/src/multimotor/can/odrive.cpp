@@ -155,8 +155,15 @@ MotorDrive* ODriveDriver::makeDuplicate(uint8_t newId) const {
     return new ODriveDriver(newId, can_, "dupe");
 }
 
-bool ODriveDriver::writeNewId(uint8_t newId, bool sendToDrive) {
-    //TODO
-    return false;
+bool ODriveDriver::writeNewId(uint8_t newid, bool sendToDrive) {
+    if (newid > DEFAULT_ID) {
+        return false;
+    }
+    bool ret = false;
+    if (sendToDrive) {
+        ret = send(CmdIDs::Address, &newid, 1, CanSS::Retry, CanReq::RequestReply);
+    } else ret = true;
+    id_ = newid;
+    return ret;
 }
 
