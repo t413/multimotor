@@ -18,6 +18,7 @@ public:
     // MotorDrive interface
     bool requestStatus() override;
     bool setMode(MotorMode mode) override;
+    bool supportsMode(MotorMode mode) const override { return mode != MotorMode::Current; }
     bool setSetpoint(MotorMode mode, float value) override;
     bool handleIncoming(uint32_t id, uint8_t const* data, uint8_t len, uint32_t now) override; // Handles payload for this servo
     uint32_t getLastStatusTime() const override { return lastStatusTime_; }

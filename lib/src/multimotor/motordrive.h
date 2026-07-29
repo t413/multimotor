@@ -23,6 +23,7 @@ public:
     virtual const char* getName() const { return name_; }
     virtual bool requestStatus() = 0;
     virtual bool setMode(MotorMode mode) = 0;
+    virtual bool supportsMode(MotorMode) const { return true; }
     virtual bool setSetpoint(MotorMode, float) = 0;
     virtual bool handleIncoming(uint32_t id, uint8_t const* data, uint8_t len, uint32_t now) = 0;
     virtual uint32_t getLastStatusTime() const = 0;
