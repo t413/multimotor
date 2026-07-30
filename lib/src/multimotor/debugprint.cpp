@@ -96,6 +96,8 @@ void DebugPrinter::setPlatformSpecific(void*) {
 #ifndef ARDUINO
 #include <chrono>
 #include <thread>
+#include <sys/time.h>
+#include <unistd.h>
 uint32_t millis() {
     // Simple millis implementation using C++11 chrono
     using namespace std::chrono;
@@ -109,5 +111,8 @@ uint32_t micros() {
 }
 void delay(uint32_t ms) {
     std::this_thread::sleep_for(std::chrono::milliseconds(ms));
+}
+void delayMicroseconds(uint32_t microseconds) {
+    usleep(microseconds);
 }
 #endif

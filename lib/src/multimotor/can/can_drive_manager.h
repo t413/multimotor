@@ -24,7 +24,3 @@ protected:
     CanInterface* interface_ = nullptr;
 };
 
-#ifndef ARDUINO
-uint32_t micros();
-void delayMicroseconds(uint32_t);
-#endif
