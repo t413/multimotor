@@ -3,10 +3,11 @@
 #include "../can/can_interface.h"
 
 enum class CGCmds : uint8_t;
+class CanDriveManager;
 
 class CyberGearDriver : public MotorDrive {
     uint8_t id_ = 0;
-    CanInterface* can_ = nullptr;
+    CanDriveManager* bus_ = nullptr;
     uint8_t lastFaults_ = 0;
     uint32_t lastStatusTime_ = 0;
     uint32_t lastCommsTime_ = 0;
@@ -15,7 +16,7 @@ class CyberGearDriver : public MotorDrive {
     float vbus_ = 0.0f;  // Cached VBUS value
 
 public:
-    CyberGearDriver(uint8_t id, CanInterface* can, const char* name);
+    CyberGearDriver(uint8_t id, CanDriveManager* bus, const char* name);
     static constexpr uint8_t DEFAULT_ID = 0x7D;
 
     //contract

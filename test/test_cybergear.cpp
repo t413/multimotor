@@ -1,16 +1,13 @@
 #include <gtest/gtest.h>
 #include <multimotor/can/cybergear.h>
+#include <multimotor/can/can_drive_manager.h>
 #include "test_utils.h"
 
 
-TEST(CyberGear, constructor) {
-    MockCanInterface mockCan;
-    CyberGearDriver driver(1, &mockCan, "test");
-}
-
 TEST(CyberGear, RequestStatus) {
     MockCanInterface mockCan;
-    CyberGearDriver driver(16, &mockCan, "test");
+    CanDriveManager mgr(&mockCan);
+    CyberGearDriver driver(16, &mgr, "test");
     printf("Requesting status...\n");
     fflush(stdout);
     driver.requestStatus();
@@ -22,7 +19,8 @@ TEST(CyberGear, RequestStatus) {
 
 TEST(CyberGear, SetEnable) {
     MockCanInterface mockCan;
-    CyberGearDriver driver(16, &mockCan, "test");
+    CanDriveManager mgr(&mockCan);
+    CyberGearDriver driver(16, &mgr, "test");
     driver.setEnable(true);
     ASSERT_FALSE(mockCan.sentFrames.empty());
     auto& frame = mockCan.sentFrames.back();
@@ -32,7 +30,8 @@ TEST(CyberGear, SetEnable) {
 
 TEST(CyberGear, HandleIncoming) {
     MockCanInterface mockCan;
-    CyberGearDriver driver(16, &mockCan, "test");
+    CanDriveManager mgr(&mockCan);
+    CyberGearDriver driver(16, &mgr, "test");
 
 
     // Prepare a realistic status frame

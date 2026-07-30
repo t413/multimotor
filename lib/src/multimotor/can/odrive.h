@@ -1,8 +1,8 @@
 #pragma once
 #include "../motordrive.h"
-#include "../can/can_interface.h"
+#include "can_interface.h"
 
-class CanInterface;
+class CanDriveManager;
 enum class OdriveAxisState : uint8_t {
     Undefined = 0,
     Idle = 1,
@@ -29,7 +29,7 @@ enum class CmdIDs : uint8_t;
 
 class ODriveDriver : public MotorDrive {
     uint8_t id_ = 0;
-    CanInterface* can_ = nullptr;
+    CanDriveManager* bus_ = nullptr;
     uint32_t lastFaults_ = 0;
     uint8_t lastAxisState_ = 0;
     uint32_t lastHeartbeatTime_ = 0;
@@ -39,7 +39,7 @@ class ODriveDriver : public MotorDrive {
     MotorState lastStatus_; // Holds the state of the motor
     MotorMode lastSentMode_ = MotorMode::Unknown;
 public:
-    ODriveDriver(uint8_t id, CanInterface* can, const char* name);
+    ODriveDriver(uint8_t id, CanDriveManager* bus, const char* name);
     static constexpr uint8_t DEFAULT_ID = 0x3f;
 
     //contract

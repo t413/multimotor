@@ -1,5 +1,5 @@
 #include "cybergear.h"
-#include "can_interface.h"
+#include "can_drive_manager.h"
 #include <string.h>
 #include "../debugprint.h"
 
@@ -9,6 +9,9 @@
 #define V_MAX (30.0f)
 #define T_MIN (-12.0f)
 #define T_MAX (12.0f)
+
+constexpr uint32_t CANID_CMD_MASK = 0xFF000000; //bits 24-31, cmd = (this >> 24)
+constexpr uint32_t CANID_DRIVEID_MASK = 0x0000FF00; //bits 8-15, id = (this >> 8)
 
 float uint_to_float(uint16_t value, float value_min, float value_max) {
     uint16_t int_max = 0xFFFF;
@@ -67,17 +70,17 @@ MotorMode toMotorMode(CyberGearMode mode) {
 }
 
 
-CyberGearDriver::CyberGearDriver(uint8_t id, CanInterface* can, const char* n) : MotorDrive(n), id_(id), can_(can) { }
+CyberGearDriver::CyberGearDriver(uint8_t id, CanDriveManager* bus, const char* n) : MotorDrive(n), id_(id), bus_(bus) { }
 
 uint32_t mkID(uint8_t cmd, uint8_t opthi, uint8_t optlo, uint8_t id) {
     return (cmd << 24) | (opthi << 16) | (optlo << 8) | id;
 }
 
 bool CyberGearDriver::send(CGCmds cmd, uint8_t* data, uint8_t len, CanSS ss) {
-    if (!can_) return false;
+    if (!bus_) return false;
     if (lastCommsTime_ == 0) ss = CanSS::Singleshot; //force no-retry until we've heard anything back
     //no RTR, seems to break things with cybergear CAN. Always use CanReq::Command.
-    return can_->send(mkID((uint8_t)cmd, 0, 0, id_), data, len, CanFrame::Extended, ss, CanReq::Command);
+    return bus_->send(mkID((uint8_t)cmd, 0, 0, id_), data, len, CanFrame::Extended, ss, CanReq::Command);
 }
 
 
@@ -86,10 +89,9 @@ bool CyberGearDriver::requestStatus() {
 }
 
 bool CyberGearDriver::ping(int timeout_ms) {
-    if (! requestStatus()) return false;
+    if (! send(CGCmds::Fault, nullptr, 0, CanSS::Singleshot)) return false; //request status but singleshot
     CanMessage msg;
-    if (!can_->readOne(msg, timeout_ms)) return false;
-    return msg.id == id_;
+    return bus_->waitForReply(msg, timeout_ms * 1000, id_ << 8, CANID_DRIVEID_MASK);
 }
 
 bool CyberGearDriver::setCyberMode(uint8_t mode) {
@@ -134,8 +136,8 @@ bool CyberGearDriver::fetchVBus() {
 }
 
 bool CyberGearDriver::handleIncoming(uint32_t id, uint8_t const* data, uint8_t len, uint32_t now) {
-    auto msgtype = (CGCmds)((id & 0xFF000000) >> 24); //bits 24-28
-    uint8_t driveid = (id & 0x0000FF00) >> 8; //bits 8-15
+    auto msgtype = (CGCmds)((id & CANID_CMD_MASK) >> 24); //bits 24-28
+    uint8_t driveid = (id & CANID_DRIVEID_MASK) >> 8; //bits 8-15
     if (driveid != id_) return false;
     auto* debug = DebugPrinter::getPrinter();
     lastCommsTime_ = now;
@@ -186,7 +188,7 @@ bool CyberGearDriver::handleIncoming(uint32_t id, uint8_t const* data, uint8_t l
 
 MotorDrive* CyberGearDriver::makeDuplicate(int16_t newId) const {
     if (newId < 0) newId = DEFAULT_ID;
-    return new CyberGearDriver(newId, can_, "dupe");
+    return new CyberGearDriver(newId, bus_, "dupe");
 }
 
 bool CyberGearDriver::writeNewId(uint8_t newId, bool sendToDrive) {
@@ -194,7 +196,7 @@ bool CyberGearDriver::writeNewId(uint8_t newId, bool sendToDrive) {
     if (sendToDrive) {
         uint8_t data[8] = {1, 0, 0, 0, 0, 0, 0, 0};
         uint32_t canId = mkID((uint8_t)CGCmds::SetCanId, newId, 0, id_);
-        ret = can_? can_->send(canId, data, 8, CanFrame::Extended, CanSS::Retry, CanReq::Command) : false;
+        ret = bus_? bus_->send(canId, data, 8, CanFrame::Extended, CanSS::Retry, CanReq::Command) : false;
     } else { ret = true; }
     id_ = newId;
     return ret;

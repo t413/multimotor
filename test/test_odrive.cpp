@@ -1,17 +1,14 @@
 #include <gtest/gtest.h>
 #include <multimotor/debugprint.h>
+#include <multimotor/can/can_drive_manager.h>
 #include <multimotor/can/odrive.h>
 #include "test_utils.h"
 
 
-TEST(ODriveDriver, constructor) {
-    MockCanInterface mockCan;
-    ODriveDriver driver(1, &mockCan, "test");
-}
-
 TEST(ODriveDriver, RequestStatus) {
     MockCanInterface mockCan;
-    ODriveDriver driver(16, &mockCan, "test");
+    CanDriveManager mgr(&mockCan);
+    ODriveDriver driver(16, &mgr, "test");
     printf("Requesting status...\n");
     fflush(stdout);
     driver.requestStatus();
@@ -23,7 +20,8 @@ TEST(ODriveDriver, RequestStatus) {
 
 TEST(ODriveDriver, SetEnable) {
     MockCanInterface mockCan;
-    ODriveDriver driver(16, &mockCan, "test");
+    CanDriveManager mgr(&mockCan);
+    ODriveDriver driver(16, &mgr, "test");
     driver.setMode(MotorMode::Position);
     ASSERT_FALSE(mockCan.sentFrames.empty());
     auto& frame = mockCan.sentFrames.back();
@@ -35,7 +33,8 @@ TEST(ODriveDriver, SetEnable) {
 
 TEST(ODriveDriver, HandleIncoming_heartbeat) {
     MockCanInterface mockCan;
-    ODriveDriver driver(16, &mockCan, "test");
+    CanDriveManager mgr(&mockCan);
+    ODriveDriver driver(16, &mgr, "test");
 
     // Prepare a realistic heartbeat frame
     uint32_t can_id = (0x01) + (16 << 5);  // (heartbeat type) + (node_id 16)

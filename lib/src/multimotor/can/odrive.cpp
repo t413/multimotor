@@ -1,5 +1,5 @@
 #include "odrive.h"
-#include "can_interface.h"
+#include "can_drive_manager.h"
 #include "../debugprint.h"
 #include <string.h>
 
@@ -33,14 +33,14 @@ enum class CmdIDs : uint8_t {
     GetPowers             = 0x1d,
 };
 
-ODriveDriver::ODriveDriver(uint8_t id, CanInterface* can, const char* n) : MotorDrive(n), id_(id), can_(can) { }
+ODriveDriver::ODriveDriver(uint8_t id, CanDriveManager* bus, const char* n) : MotorDrive(n), id_(id), bus_(bus) { }
 
 uint16_t mkID(uint8_t id, CmdIDs cmd) {
     return (id << 5) | (uint16_t) cmd;
 }
 
 bool ODriveDriver::send(CmdIDs cmd, uint8_t* data, uint8_t len, CanSS ss, CanReq rtr) {
-    return can_? can_->send(mkID(id_, (CmdIDs) cmd), data, len, CanFrame::Standard, ss, rtr) : false;
+    return bus_? bus_->send(mkID(id_, (CmdIDs) cmd), data, len, CanFrame::Standard, ss, rtr) : false;
 }
 
 //get different combinations of payload
@@ -62,8 +62,7 @@ bool ODriveDriver::fetchVBus() {
 bool ODriveDriver::ping(int timeout_ms) {
     if (! requestStatus()) return false;
     CanMessage msg;
-    if (!can_->readOne(msg, timeout_ms)) return false;
-    return msg.id == id_;
+    return bus_->waitForReply(msg, timeout_ms * 1000, id_);
 }
 
 bool ODriveDriver::setOdriveMode(OdriveCtrlMode mode) {
@@ -153,7 +152,7 @@ bool ODriveDriver::handleIncoming(uint32_t id, uint8_t const* data, uint8_t len,
 
 MotorDrive* ODriveDriver::makeDuplicate(int16_t newId) const {
     if (newId < 0) newId = DEFAULT_ID;
-    return new ODriveDriver(newId, can_, "dupe");
+    return new ODriveDriver(newId, bus_, "dupe");
 }
 
 bool ODriveDriver::writeNewId(uint8_t newid, bool sendToDrive) {

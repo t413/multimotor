@@ -25,6 +25,23 @@ uint8_t CanDriveManager::getCount() const {
     return driveCount_;
 }
 
+bool CanDriveManager::send(uint32_t id, uint8_t* data, uint8_t len, CanFrame extended, CanSS ss, CanReq rtr) {
+    return interface_ ? interface_->send(id, data, len, extended, ss, rtr) : false;
+}
+
+bool CanDriveManager::waitForReply(CanMessage& msg, uint32_t timeout_us, uint32_t id, uint32_t idmask) {
+    uint32_t deadline = micros() + timeout_us;
+    while ((int32_t)(deadline - micros()) > 0) {
+        if (interface_->readOne(msg, (int32_t)(deadline - micros()) / 1000)) {
+            handleIncoming(msg.id, msg.data, msg.len, millis());
+            if ((msg.id & idmask) == (id & idmask))
+                return true;
+        }
+        delayMicroseconds(10); //small pause to avoid busy loop
+    }
+    return false;
+}
+
 bool CanDriveManager::handleIncoming(uint32_t id, uint8_t const* data, uint8_t len, uint32_t now) {
     uint8_t handled = 0;
     for (uint8_t i = 0; i < driveCount_; ++i) {
@@ -39,18 +56,8 @@ bool CanDriveManager::handleIncoming(uint32_t id, uint8_t const* data, uint8_t l
 }
 
 bool CanDriveManager::readOnce(uint32_t now, uint32_t timeout_us) {
-    if (timeout_us == 0) {
-        return iterate(now, 0) > 0;
-    }
-    uint32_t start = micros();
-    uint32_t deadline = start + timeout_us;
-    uint32_t timeout_ms = timeout_us / 1000;
-
-    while ((int32_t)(micros() - deadline) <= 0) {
-        if (iterate(now, timeout_ms) > 0) return true;
-        delayMicroseconds(10); //small pause to avoid busy loop
-    }
-    return false;
+    CanMessage msg;
+    return waitForReply(msg, timeout_us, now);
 }
 
 uint8_t CanDriveManager::iterate(uint32_t now, uint32_t timeout_ms) {

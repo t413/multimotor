@@ -1,6 +1,6 @@
 #pragma once
 #include "../drive_manager.h"
-class CanInterface;
+#include "can_interface.h"
 
 class CanDriveManager : public DriveManager {
 public:
@@ -16,6 +16,8 @@ public:
     virtual bool readOnce(uint32_t now, uint32_t timeout_us) override;
     virtual uint8_t iterate(uint32_t now, uint32_t timeout_ms) override;
 
+    virtual bool send(uint32_t id, uint8_t* data, uint8_t len, CanFrame extended, CanSS ss = CanSS::Singleshot, CanReq rtr = CanReq::Command);
+    bool waitForReply(CanMessage&, uint32_t timeout_us, uint32_t id = 0, uint32_t idmask = 0xffffffff);
 
 protected:
     static constexpr uint8_t MAX_DRIVES = 16;
