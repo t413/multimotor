@@ -81,8 +81,10 @@ bool LXServo::requestTemp() {
 
 bool LXServo::enable(bool en) {
     uint8_t enableParams[] = {(uint8_t)(en? 1 : 0)};
-    return sendCommand(LX16A_SERVO_LOAD_OR_UNLOAD_WRITE, enableParams, 1, false);
+    auto ret = sendCommand(LX16A_SERVO_LOAD_OR_UNLOAD_WRITE, enableParams, 1, false);
     enabled_ = en;
+    if (!en) ret &= moveSpeed(0);
+    return ret;
 }
 
 bool LXServo::setMode(MotorMode mode) {
