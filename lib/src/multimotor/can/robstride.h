@@ -2,7 +2,7 @@
 #include "../motordrive.h"
 #include "../can/can_interface.h"
 
-class CanInterface;
+class CanDriveManager;
 
 enum class RobStrideCtrlMode : uint8_t {
     MotionControl = 0,
@@ -36,7 +36,7 @@ enum class RobStrideCmdType : uint8_t {
 
 class RobStrideDriver : public MotorDrive {
     uint8_t id_ = 0;
-    CanInterface* can_ = nullptr;
+    CanDriveManager* bus_ = nullptr;
     uint32_t lastFaults_ = 0;
     uint32_t lastStatusTime_ = 0;
     float lastVBus_ = 0.0f;
@@ -45,7 +45,8 @@ class RobStrideDriver : public MotorDrive {
     bool enabled_ = false;
 
 public:
-    RobStrideDriver(uint8_t id, CanInterface* can, const char* name);
+    RobStrideDriver(uint8_t id, CanDriveManager* bus, const char* name);
+    static constexpr uint8_t DEFAULT_HOST_ID = 0xff;
 
     // MotorDrive interface implementation
     uint32_t getId() const override { return id_; }
@@ -58,6 +59,10 @@ public:
     MotorState getMotorState() const override { return lastStatus_; }
     bool fetchVBus() override;
     float getVBus() const override { return lastVBus_; }
+    bool ping(int timeout_ms = 100) override;
+    bool validID(int id) const override;
+    MotorDrive* makeDuplicate(int16_t id = -1) const override;
+    bool writeNewId(uint8_t newId, bool sendToDrive = true) override;
 
     // RobStride specific methods
     bool setRobStrideMode(RobStrideCtrlMode mode);
@@ -66,7 +71,7 @@ public:
     bool motionControl(float position, float velocity, float kp, float kd, float torque);
 
 private:
-    bool send(RobStrideCmdType cmd, const uint8_t* data, uint8_t len, CanSS ss = CanSS::Singleshot, CanReq rtr = CanReq::Command);
+    bool send(RobStrideCmdType cmd, const uint8_t* data, uint8_t len, uint16_t extradata = DEFAULT_HOST_ID, CanSS ss = CanSS::Singleshot, CanReq rtr = CanReq::Command);
     uint16_t floatToUint(float x, float x_min, float x_max, int bits);
     float uintToFloat(uint16_t x_int, float x_min, float x_max, int bits);
 };
