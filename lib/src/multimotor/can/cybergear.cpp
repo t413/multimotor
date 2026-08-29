@@ -76,7 +76,7 @@ uint32_t mkID(uint8_t cmd, uint8_t opthi, uint8_t optlo, uint8_t id) {
     return (cmd << 24) | (opthi << 16) | (optlo << 8) | id;
 }
 
-bool CyberGearDriver::send(CGCmds cmd, uint8_t* data, uint8_t len, CanSS ss) {
+bool CyberGearDriver::send(CGCmds cmd, const uint8_t* data, uint8_t len, CanSS ss) {
     if (!bus_) return false;
     if (lastCommsTime_ == 0) ss = CanSS::Singleshot; //force no-retry until we've heard anything back
     //no RTR, seems to break things with cybergear CAN. Always use CanReq::Command.

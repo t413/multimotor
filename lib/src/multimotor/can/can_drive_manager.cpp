@@ -25,7 +25,7 @@ uint8_t CanDriveManager::getCount() const {
     return driveCount_;
 }
 
-bool CanDriveManager::send(uint32_t id, uint8_t* data, uint8_t len, CanFrame extended, CanSS ss, CanReq rtr) {
+bool CanDriveManager::send(uint32_t id, const uint8_t* data, uint8_t len, CanFrame extended, CanSS ss, CanReq rtr) {
     return interface_ ? interface_->send(id, data, len, extended, ss, rtr) : false;
 }
 

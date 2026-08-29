@@ -12,7 +12,7 @@ union RobStridePayload {
 
 RobStrideDriver::RobStrideDriver(uint8_t id, CanInterface* can, const char* n) : MotorDrive(n), id_(id), can_(can) {}
 
-bool RobStrideDriver::send(RobStrideCmdType cmd, uint8_t* data, uint8_t len, CanSS ss, CanReq rtr) {
+bool RobStrideDriver::send(RobStrideCmdType cmd, const uint8_t* data, uint8_t len, CanSS ss, CanReq rtr) {
     uint32_t canId = (uint32_t(cmd) << 24) | (0x1F << 8) | id_;  // cmd | master_id | motor_id
     return can_? can_->send(canId, data, len, CanFrame::Extended, ss, rtr) : false;
 }

@@ -11,7 +11,7 @@ class MockCanInterface : public CanInterface {
 public:
     std::vector<CanMessage> sentFrames;
 
-    virtual bool send(uint32_t id, uint8_t* data, uint8_t len, CanFrame extended, CanSS ss = CanSS::Singleshot, CanReq rtr = CanReq::Command) override {
+    virtual bool send(uint32_t id, const uint8_t* data, uint8_t len, CanFrame extended, CanSS ss = CanSS::Singleshot, CanReq rtr = CanReq::Command) override {
         printf("MockCanInterface: Sending frame with ID: %08X, Length: %d ", id, len);
         printHex("data: ", data, len);
         CanMessage frame;

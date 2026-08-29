@@ -39,7 +39,7 @@ uint16_t mkID(uint8_t id, CmdIDs cmd) {
     return (id << 5) | (uint16_t) cmd;
 }
 
-bool ODriveDriver::send(CmdIDs cmd, uint8_t* data, uint8_t len, CanSS ss, CanReq rtr) {
+bool ODriveDriver::send(CmdIDs cmd, const uint8_t* data, uint8_t len, CanSS ss, CanReq rtr) {
     return bus_? bus_->send(mkID(id_, (CmdIDs) cmd), data, len, CanFrame::Standard, ss, rtr) : false;
 }
 

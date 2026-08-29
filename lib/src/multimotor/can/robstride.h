@@ -66,7 +66,7 @@ public:
     bool motionControl(float position, float velocity, float kp, float kd, float torque);
 
 private:
-    bool send(RobStrideCmdType cmd, uint8_t* data, uint8_t len, CanSS ss = CanSS::Singleshot, CanReq rtr = CanReq::Command);
+    bool send(RobStrideCmdType cmd, const uint8_t* data, uint8_t len, CanSS ss = CanSS::Singleshot, CanReq rtr = CanReq::Command);
     uint16_t floatToUint(float x, float x_min, float x_max, int bits);
     float uintToFloat(uint16_t x_int, float x_min, float x_max, int bits);
 };

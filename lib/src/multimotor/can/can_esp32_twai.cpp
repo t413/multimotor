@@ -44,7 +44,7 @@ void CanEsp32Twai::setup(uint8_t rx, uint8_t tx, int baudrate, Stream* debug) {
     }
     if (debug) debug->println("twai set up");
 }
-bool CanEsp32Twai::send(uint32_t id, uint8_t* data, uint8_t len, CanFrame extended, CanSS ss, CanReq rtr) {
+bool CanEsp32Twai::send(uint32_t id, const uint8_t* data, uint8_t len, CanFrame extended, CanSS ss, CanReq rtr) {
     twai_message_t message = {0};
     message.extd = (extended == CanFrame::Extended)? 1 : 0; //enable extended frame format
     message.ss = (ss == CanSS::Singleshot)? 1 : 0; //enable single shot transmission

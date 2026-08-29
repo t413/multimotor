@@ -28,7 +28,7 @@ public:
     uint32_t getLastStatusTime() const override { return lastStatusTime_; }
     uint32_t getLastFaults() const override { return lastFaults_; }
 
-    bool send(CGCmds cmd, uint8_t* data, uint8_t len, CanSS ss = CanSS::Singleshot);
+    bool send(CGCmds cmd, const uint8_t* data, uint8_t len, CanSS ss = CanSS::Singleshot);
     MotorState getMotorState() const override { return lastStatus_; }
     bool setCyberMode(uint8_t mode);
     bool setEnable(bool enable);

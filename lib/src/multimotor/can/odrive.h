@@ -55,7 +55,7 @@ public:
     bool setOdriveMode(OdriveCtrlMode);
     bool setOdriveEnable(bool enable);
     bool clearErrors();
-    bool send(CmdIDs cmd, uint8_t* data, uint8_t len = 8, CanSS ss = CanSS::Singleshot, CanReq rtr = CanReq::Command);
+    bool send(CmdIDs cmd, const uint8_t* data, uint8_t len = 8, CanSS ss = CanSS::Singleshot, CanReq rtr = CanReq::Command);
 
     bool fetchVBus() override;
     float getVBus() const override { return lastVolt_; }
