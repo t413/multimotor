@@ -30,6 +30,7 @@ void DebugPrinter::printhex(const uint8_t* buf, size_t len, bool newline) {
 
 #ifdef ARDUINO
 #include <Arduino.h>
+#include <cstdio>
 
 class DebugSerial : public DebugPrinter {
 private:
@@ -38,15 +39,18 @@ private:
 public:
     DebugSerial(Stream* stream) : stream_(stream) { }
     bool availableForWrite() override {
-        return stream_->availableForWrite();
+        return stream_ != nullptr && stream_->availableForWrite();
     }
     void printf(const char* format, ...) override {
-        if (availableForWrite()) {
-            va_list args;
-            va_start(args, format);
-            stream_->printf(format, args);
-            va_end(args);
+        if (!stream_ || !availableForWrite()) {
+            return;
         }
+        va_list args;
+        va_start(args, format);
+        char buffer[128];
+        vsnprintf(buffer, sizeof(buffer), format, args);
+        stream_->print(buffer);
+        va_end(args);
     }
 
     void println(const char* str) override { if (stream_) stream_->println(str); }

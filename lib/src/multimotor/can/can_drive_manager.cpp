@@ -49,7 +49,7 @@ bool CanDriveManager::handleIncoming(uint32_t id, uint8_t const* data, uint8_t l
     }
     auto dbg = DebugPrinter::getPrinter();
     if (!handled && dbg) {
-        dbg->printf("CanDriveManager: No drive handled incoming data for ID %u, len %u:", id, len);
+        dbg->printf("CanDriveManager: No drive handled incoming data for ID 0x%x, len %u:", id, len);
         dbg->printhex(data, len, true);
     }
     return handled > 0;
