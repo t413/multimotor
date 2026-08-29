@@ -121,7 +121,7 @@ bool RobStrideDriver::setZeroPosition() {
 bool RobStrideDriver::ping(int timeout_ms) {
     if (!requestStatus() || !bus_) return false;
     CanMessage msg;
-    return bus_->waitForReply(msg, timeout_ms * 1000, id_, 0x000000FFu);
+    return bus_->waitForReply(msg, timeout_ms * 1000, id_ << 8, 0x0000FF00u);
 }
 
 bool RobStrideDriver::validID(int id) const {
@@ -136,7 +136,9 @@ MotorDrive* RobStrideDriver::makeDuplicate(int16_t newId) const {
 bool RobStrideDriver::writeNewId(uint8_t newId, bool sendToDrive) {
     bool ret = true;
     if (sendToDrive) {
-        ret = send(RobStrideCmdType::SetCanID, nullptr, 0, newId, CanSS::Retry, CanReq::Command);
+        uint8_t data[8] = {0};
+        uint16_t extra = (newId << 8) | DEFAULT_HOST_ID;
+        ret = send(RobStrideCmdType::SetCanID, data, 8, extra, CanSS::Retry, CanReq::Command);
     }
     id_ = newId;
     return ret;
