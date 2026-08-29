@@ -26,27 +26,22 @@ enum class RobStrideCmdType : uint8_t {
     ErrorFeedback = 0x15
 };
 
-// Limits for RobStride motor
-#define ROBSTRIDE_P_MIN -12.5f
-#define ROBSTRIDE_P_MAX 12.5f
-#define ROBSTRIDE_V_MIN -44.0f
-#define ROBSTRIDE_V_MAX 44.0f
-#define ROBSTRIDE_T_MIN -17.0f
-#define ROBSTRIDE_T_MAX 17.0f
-
 class RobStrideDriver : public MotorDrive {
     uint8_t id_ = 0;
     CanDriveManager* bus_ = nullptr;
     uint32_t lastFaults_ = 0;
     uint32_t lastStatusTime_ = 0;
+    uint32_t lastCommsTime_ = 0;
     float lastVBus_ = 0.0f;
     MotorState lastStatus_;
     MotorMode lastSentMode_ = MotorMode::Disabled;
     bool enabled_ = false;
+    uint8_t serial_[8] = {0};
 
 public:
     RobStrideDriver(uint8_t id, CanDriveManager* bus, const char* name);
-    static constexpr uint8_t DEFAULT_HOST_ID = 0xff;
+    static constexpr uint8_t DEFAULT_ID = 0x7D;
+    static constexpr uint8_t DEFAULT_HOST_ID = 0xFE;
 
     // MotorDrive interface implementation
     uint32_t getId() const override { return id_; }
@@ -69,9 +64,10 @@ public:
     bool enable(bool en = true);
     bool setZeroPosition();
     bool motionControl(float position, float velocity, float kp, float kd, float torque);
+    bool reqParam(uint16_t paramId);
 
 private:
     bool send(RobStrideCmdType cmd, const uint8_t* data, uint8_t len, uint16_t extradata = DEFAULT_HOST_ID, CanSS ss = CanSS::Singleshot, CanReq rtr = CanReq::Command);
-    uint16_t floatToUint(float x, float x_min, float x_max, int bits);
-    float uintToFloat(uint16_t x_int, float x_min, float x_max, int bits);
+    static uint16_t floatToUint(float x, float x_min, float x_max, int bits);
+    static float uintToFloat(uint16_t x_int, float x_min, float x_max, int bits);
 };

@@ -10,10 +10,22 @@ union RobStridePayload {
     float floats[2];
 };
 
+constexpr float ROBSTRIDE_P_MAX =  4 * M_PI;
+constexpr float ROBSTRIDE_P_MIN = -ROBSTRIDE_P_MAX;
+constexpr float ROBSTRIDE_V_MAX = 50.0f; //rad/s
+constexpr float ROBSTRIDE_V_MIN = -ROBSTRIDE_V_MAX;
+constexpr float ROBSTRIDE_T_MAX = 6.0f;
+constexpr float ROBSTRIDE_T_MIN = -ROBSTRIDE_T_MAX;
+
+enum class RobStrideParams : uint16_t {
+    VBUS = 0x701C,
+};
+
 RobStrideDriver::RobStrideDriver(uint8_t id, CanDriveManager* bus, const char* n) : MotorDrive(n), id_(id), bus_(bus) {}
 
 bool RobStrideDriver::send(RobStrideCmdType cmd, const uint8_t* data, uint8_t len, uint16_t extradata, CanSS ss, CanReq rtr) {
     uint32_t canId = (uint32_t(cmd) << 24) | (extradata << 8) | id_;  // cmd | master_id | motor_id
+    if (lastCommsTime_ == 0) ss = CanSS::Singleshot; //force no-retry until we've heard anything back
     return bus_? bus_->send(canId, data, len, CanFrame::Extended, ss, rtr) : false;
 }
 
@@ -33,11 +45,13 @@ float RobStrideDriver::uintToFloat(uint16_t x_int, float x_min, float x_max, int
 
 bool RobStrideDriver::requestStatus() {
     uint8_t data[8] = {0};
-    return send(RobStrideCmdType::MotorRequest, data, 8, DEFAULT_HOST_ID, CanSS::Retry, CanReq::RequestReply);
+    if (lastCommsTime_ == 0)
+        return send(RobStrideCmdType::GetID, data, 8, DEFAULT_HOST_ID, CanSS::Singleshot);
+    else return send(RobStrideCmdType::MotorRequest, data, 8, DEFAULT_HOST_ID, CanSS::Retry);
 }
 
 bool RobStrideDriver::fetchVBus() {
-    return true; // RobStride doesn't have separate VBus command, handled in status
+    return reqParam((uint16_t)RobStrideParams::VBUS);
 }
 
 bool RobStrideDriver::setRobStrideMode(RobStrideCtrlMode mode) {
@@ -60,33 +74,30 @@ bool RobStrideDriver::setMode(MotorMode mode) {
         ret = enable(false);
         lastSentMode_ = MotorMode::Disabled;
     } else {
-        lastSentMode_ = mode;
         RobStrideCtrlMode robMode = (mode == MotorMode::Speed) ? RobStrideCtrlMode::Speed :
                                    (mode == MotorMode::Current) ? RobStrideCtrlMode::Current :
                                    (mode == MotorMode::Position) ? RobStrideCtrlMode::Position :
                                    RobStrideCtrlMode::MotionControl;
         setRobStrideMode(robMode);
         ret = enable(true);
+        if (ret) lastSentMode_ = mode;
     }
     return ret;
 }
 
 bool RobStrideDriver::motionControl(float position, float velocity, float kp, float kd, float torque) {
-    uint8_t data[8];
     uint16_t pos_int = floatToUint(position, ROBSTRIDE_P_MIN, ROBSTRIDE_P_MAX, 16);
-    uint16_t vel_int = floatToUint(velocity, ROBSTRIDE_V_MIN, ROBSTRIDE_V_MAX, 12);
-    uint16_t kp_int = floatToUint(kp, 0, 500, 12);
-    uint16_t kd_int = floatToUint(kd, 0, 5, 12);
-    uint16_t torque_int = floatToUint(torque, ROBSTRIDE_T_MIN, ROBSTRIDE_T_MAX, 12);
+    uint16_t vel_int = floatToUint(velocity, ROBSTRIDE_V_MIN, ROBSTRIDE_V_MAX, 16);
+    uint16_t kp_int = floatToUint(kp, 0, 500, 16);
+    uint16_t kd_int = floatToUint(kd, 0, 5, 16);
+    uint16_t torque_int = floatToUint(torque, ROBSTRIDE_T_MIN, ROBSTRIDE_T_MAX, 16);
 
-    data[0] = pos_int >> 8;
-    data[1] = pos_int & 0xFF;
-    data[2] = vel_int >> 8;
-    data[3] = vel_int & 0xFF;
-    data[4] = kp_int >> 8;
-    data[5] = kp_int & 0xFF;
-    data[6] = kd_int >> 8;
-    data[7] = kd_int & 0xFF;
+    uint8_t data[8] = {
+        static_cast<uint8_t>(pos_int >> 8), static_cast<uint8_t>(pos_int & 0xFF),
+        static_cast<uint8_t>(vel_int >> 8), static_cast<uint8_t>(vel_int & 0xFF),
+        static_cast<uint8_t>(kp_int >> 8),  static_cast<uint8_t>(kp_int & 0xFF),
+        static_cast<uint8_t>(kd_int >> 8),  static_cast<uint8_t>(kd_int & 0xFF),
+    };
 
     return send(RobStrideCmdType::MotionControl, data, 8, torque_int, CanSS::Singleshot, CanReq::Command);
 }
@@ -118,7 +129,7 @@ bool RobStrideDriver::validID(int id) const {
 }
 
 MotorDrive* RobStrideDriver::makeDuplicate(int16_t newId) const {
-    if (newId < 0) newId = id_;
+    if (newId < 0) newId = DEFAULT_ID;
     return new RobStrideDriver((uint8_t)newId, bus_, "dupe");
 }
 
@@ -131,32 +142,51 @@ bool RobStrideDriver::writeNewId(uint8_t newId, bool sendToDrive) {
     return ret;
 }
 
-bool RobStrideDriver::handleIncoming(uint32_t id, uint8_t const* data, uint8_t len, uint32_t now) {
-    uint8_t motorId = id & 0xFF;
-    if (motorId != id_) return false;
+bool RobStrideDriver::reqParam(uint16_t paramId) {
+    uint8_t data[8] = { (uint8_t)(paramId & 0xFF), (uint8_t)((paramId >> 8) & 0xFF) };
+    return send(RobStrideCmdType::GetSingleParam, data, 8, DEFAULT_HOST_ID, CanSS::Retry);
+}
 
-    uint16_t extraData = (id >> 8) & 0xFFFF;
+bool RobStrideDriver::handleIncoming(uint32_t id, uint8_t const* data, uint8_t len, uint32_t now) {
+    uint8_t hostid = id & 0xFF;
+    uint8_t driveid = (id >> 8) & 0xFF;
+    uint8_t extra = (id >> 16) & 0xFF;
     RobStrideCmdType cmd = (RobStrideCmdType)((id >> 24) & 0xFF);
+    if (driveid != id_) return false;
 
     if (cmd == RobStrideCmdType::MotorRequest && len >= 8) {
         // Parse motor status response
         uint16_t pos_int = (data[0] << 8) | data[1];
         uint16_t vel_int = (data[2] << 8) | data[3];
         uint16_t torque_int = (data[4] << 8) | data[5];
-        uint8_t temp_int = data[6];
-        uint8_t error = data[7];
+        uint8_t temp_int = (data[6] << 8) | data[7];
+        lastFaults_ = (id >> 16) & 0x3F; //bits 16~21
+        uint8_t runmode = (id >> 22) & 0x3; //bits 22~23
 
         lastStatus_.position = uintToFloat(pos_int, ROBSTRIDE_P_MIN, ROBSTRIDE_P_MAX, 16);
         lastStatus_.velocity = uintToFloat(vel_int, ROBSTRIDE_V_MIN, ROBSTRIDE_V_MAX, 16);
         lastStatus_.torque = uintToFloat(torque_int, ROBSTRIDE_T_MIN, ROBSTRIDE_T_MAX, 16);
-        lastStatus_.temperature = (float)temp_int;
-        lastStatus_.mode = enabled_ ? lastSentMode_ : MotorMode::Disabled;
-        lastFaults_ = error;
+        lastStatus_.temperature = (float)temp_int / 10.0f;
+        lastStatus_.mode = runmode ? lastSentMode_ : MotorMode::Disabled;
         lastStatusTime_ = now;
 
     } else if (cmd == RobStrideCmdType::ErrorFeedback) {
         lastFaults_ = data[0];
+    } else if (cmd == RobStrideCmdType::GetID) {
+        // update serial_ with payload
+        memcpy(serial_, data, len < 8 ? len : 8);
+        // Serial.printf("RS ID %x: Serial: %02X%02X%02X%02X%02X%02X%02X%02X\n", id_, serial_[0], serial_[1], serial_[2], serial_[3], serial_[4], serial_[5], serial_[6], serial_[7]);
+    } else if (cmd == RobStrideCmdType::GetSingleParam) {
+        // uint16_t paramid = (data[1] << 8) | data[0];
+        auto paramid = reinterpret_cast<const uint16_t&>(data[0]);
+        auto ival = reinterpret_cast<const uint32_t&>(data[4]);
+        auto fval = reinterpret_cast<const float&>(data[4]);
+        // Serial.printf("RS ID %x: Param 0x%04X = 0x%08X (%0.1f)\n", id_, paramid, ival, fval);
+        if (paramid == (uint16_t)RobStrideParams::VBUS) {
+            lastVBus_ = fval;
+        }
     }
 
+    lastCommsTime_ = now;
     return true;
 }
