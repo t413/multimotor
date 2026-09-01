@@ -36,10 +36,11 @@ enum class CmdIDs : uint8_t {
 ODriveDriver::ODriveDriver(uint8_t id, CanDriveManager* bus, const char* n) : MotorDrive(n), id_(id), bus_(bus) { }
 
 uint16_t mkID(uint8_t id, CmdIDs cmd) {
-    return (id << 5) | (uint16_t) cmd;
+    return (id << ODriveDriver::ID_START_OFFSET) | (uint16_t) cmd;
 }
 
 bool ODriveDriver::send(CmdIDs cmd, const uint8_t* data, uint8_t len, CanSS ss, CanReq rtr) {
+    if (lastCommsTime_ == 0) ss = CanSS::Singleshot; //force no-retry until we've heard anything back
     return bus_? bus_->send(mkID(id_, (CmdIDs) cmd), data, len, CanFrame::Standard, ss, rtr) : false;
 }
 
@@ -62,7 +63,7 @@ bool ODriveDriver::fetchVBus() {
 bool ODriveDriver::ping(int timeout_ms) {
     if (! requestStatus()) return false;
     CanMessage msg;
-    return bus_->waitForReply(msg, timeout_ms * 1000, id_);
+    return bus_->waitForReply(msg, timeout_ms * 1000, mkID(id_, CmdIDs::GetEncoderEstimates), MAX_ID << ID_START_OFFSET); //only match the id bits
 }
 
 bool ODriveDriver::setOdriveMode(OdriveCtrlMode mode) {
@@ -113,7 +114,7 @@ bool ODriveDriver::setSetpoint(MotorMode mode, float value) {
 }
 
 bool ODriveDriver::handleIncoming(uint32_t id, uint8_t const* data, uint8_t len, uint32_t now) {
-    uint8_t inCanId = id >> 5;
+    uint8_t inCanId = id >> ID_START_OFFSET;
     if (inCanId != id_) return false;
     CmdIDs cmd = (CmdIDs) (id & 0x1F);
     Payload p;
@@ -147,6 +148,7 @@ bool ODriveDriver::handleIncoming(uint32_t id, uint8_t const* data, uint8_t len,
             debug->println("}");
         }
     }
+    lastCommsTime_ = now;
     return true;
 }
 
@@ -156,7 +158,7 @@ MotorDrive* ODriveDriver::makeDuplicate(int16_t newId) const {
 }
 
 bool ODriveDriver::writeNewId(uint8_t newid, bool sendToDrive) {
-    if (newid > DEFAULT_ID) {
+    if (newid > MAX_ID) {
         return false;
     }
     bool ret = false;

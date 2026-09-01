@@ -14,7 +14,7 @@ TEST(RobStrideDriver, RequestStatus) {
     driver.requestStatus();
     ASSERT_FALSE(mockCan.sentFrames.empty());
     auto& frame = mockCan.sentFrames.back();
-    EXPECT_EQ(frame.id, 0xFE7D);
+    EXPECT_EQ(frame.id, 0x0000667F);
     EXPECT_EQ(frame.len, 8);
 }
 
@@ -25,6 +25,6 @@ TEST(RobStrideDriver, SetMotion) {
     driver.setSetpoint(MotorMode::Current, 0.0f);
     ASSERT_FALSE(mockCan.sentFrames.empty());
     auto& frame = mockCan.sentFrames.back();
-    EXPECT_EQ(frame.id, 0x017FFF7D); //torque is extra in ID
+    EXPECT_EQ(frame.id, 0x017FFF7F); //torque is extra in ID
     EXPECT_EQ(frame.len, 8);
 }

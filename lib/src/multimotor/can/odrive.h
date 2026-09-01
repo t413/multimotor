@@ -30,6 +30,7 @@ enum class CmdIDs : uint8_t;
 class ODriveDriver : public MotorDrive {
     uint8_t id_ = 0;
     CanDriveManager* bus_ = nullptr;
+    uint32_t lastCommsTime_ = 0;
     uint32_t lastFaults_ = 0;
     uint8_t lastAxisState_ = 0;
     uint32_t lastHeartbeatTime_ = 0;
@@ -40,7 +41,9 @@ class ODriveDriver : public MotorDrive {
     MotorMode lastSentMode_ = MotorMode::Unknown;
 public:
     ODriveDriver(uint8_t id, CanDriveManager* bus, const char* name);
-    static constexpr uint8_t DEFAULT_ID = 0x3f;
+    static constexpr uint8_t ID_START_OFFSET = 5; //5 bits for pkt type first
+    static constexpr uint8_t MAX_ID = 0x3F; //11-bit - 5bits for pkt type
+    static constexpr uint8_t DEFAULT_ID = MAX_ID;
 
     //contract
     uint32_t getId() const override { return id_; }
@@ -60,7 +63,7 @@ public:
     bool fetchVBus() override;
     float getVBus() const override { return lastVolt_; }
     bool ping(int timeout_ms = 100) override;
-    bool validID(int id) const override { return id >= 0 && id < DEFAULT_ID; }
+    bool validID(int id) const override { return id >= 0 && id <= MAX_ID; }
     MotorDrive* makeDuplicate(int16_t id = -1) const override;
     bool writeNewId(uint8_t newId, bool sendToDrive = true) override;
 };

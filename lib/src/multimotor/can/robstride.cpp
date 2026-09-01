@@ -1,6 +1,7 @@
 #include "robstride.h"
 #include "can_drive_manager.h"
 #include <string.h>
+#include <math.h>
 #include "../debugprint.h"
 
 union RobStridePayload {
