@@ -46,6 +46,7 @@ public:
     static constexpr uint8_t DEFAULT_ID = MAX_ID;
 
     //contract
+    const char* typeName() const override { return "OD"; }
     uint32_t getId() const override { return id_; }
     bool requestStatus() override;
     bool setMode(MotorMode) override;

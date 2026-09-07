@@ -22,6 +22,7 @@ public:
     virtual ~MotorDrive() { }
     virtual uint32_t getId() const = 0;
     virtual const char* getName() const { return name_; }
+    virtual const char* typeName() const = 0;
     virtual bool requestStatus() = 0;
     virtual bool setMode(MotorMode mode) = 0;
     virtual bool supportsMode(MotorMode) const { return true; }

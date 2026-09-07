@@ -17,6 +17,8 @@ public:
     static constexpr uint8_t DEFAULT_ID = 0x01;
 
     // MotorDrive interface
+    const char* typeName() const override { return "LX"; }
+    uint32_t getId() const override { return id_; }
     bool requestStatus() override;
     bool setMode(MotorMode mode) override;
     bool supportsMode(MotorMode mode) const override { return mode != MotorMode::Current; }
@@ -34,7 +36,6 @@ public:
     bool movePosTime(int16_t ticks, int16_t time);
     bool moveSpeed(int16_t speed);
     bool setAngleLimits(float minDeg, float maxDeg);
-    uint32_t getId() const override { return id_; }
     bool stop();
     static ParseResult parsePacket(uint8_t const* data, uint8_t len);
 
