@@ -23,7 +23,8 @@ enum class RobStrideCmdType : uint8_t {
     ControlMode = 0x12,
     GetSingleParam = 0x11,
     SetSingleParam = 0x12,
-    ErrorFeedback = 0x15
+    ErrorFeedback = 0x15,
+    SaveData = 0x16,
 };
 
 class RobStrideDriver : public MotorDrive {
@@ -60,6 +61,8 @@ public:
     bool validID(int id) const override;
     MotorDrive* makeDuplicate(int16_t id = -1) const override;
     bool writeNewId(uint8_t newId, bool sendToDrive = true) override;
+    bool setZero() override;
+    bool saveSettings() override;
 
     // RobStride specific methods
     bool setRobStrideMode(RobStrideCtrlMode mode);

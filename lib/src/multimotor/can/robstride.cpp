@@ -146,6 +146,16 @@ bool RobStrideDriver::writeNewId(uint8_t newId, bool sendToDrive) {
     return ret;
 }
 
+bool RobStrideDriver::setZero() {
+    uint8_t data[8] = {1, 0};
+    return send(RobStrideCmdType::SetPosZero, data, 8);
+}
+
+bool RobStrideDriver::saveSettings() {
+    uint8_t data[8] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
+    return send(RobStrideCmdType::SaveData, data, 8);
+}
+
 bool RobStrideDriver::reqParam(uint16_t paramId) {
     uint8_t data[8] = { (uint8_t)(paramId & 0xFF), (uint8_t)((paramId >> 8) & 0xFF) };
     return send(RobStrideCmdType::GetSingleParam, data, 8, DEFAULT_HOST_ID, CanSS::Retry);
