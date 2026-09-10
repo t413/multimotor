@@ -22,7 +22,7 @@ enum class RobStrideParams : uint16_t {
     VBUS = 0x701C,
 };
 
-RobStrideDriver::RobStrideDriver(uint8_t id, CanDriveManager* bus, const char* n) : MotorDrive(n), id_(id), bus_(bus) {}
+RobStrideDriver::RobStrideDriver(uint8_t id, CanDriveManager* bus, const char* n) : MotorDrive(n), id_(id % (MAX_ID + 1)), bus_(bus) {}
 
 bool RobStrideDriver::send(RobStrideCmdType cmd, const uint8_t* data, uint8_t len, uint16_t extradata, CanSS ss, CanReq rtr) {
     uint32_t canId = (uint32_t(cmd) << 24) | (extradata << 8) | id_;  // cmd | master_id | motor_id
@@ -126,7 +126,7 @@ bool RobStrideDriver::ping(int timeout_ms) {
 }
 
 bool RobStrideDriver::validID(int id) const {
-    return id >= 0 && id < 254;
+    return id >= 0 && id <= MAX_ID;
 }
 
 MotorDrive* RobStrideDriver::makeDuplicate(int16_t newId) const {
@@ -136,10 +136,11 @@ MotorDrive* RobStrideDriver::makeDuplicate(int16_t newId) const {
 
 bool RobStrideDriver::writeNewId(uint8_t newId, bool sendToDrive) {
     bool ret = true;
+    newId = newId % (MAX_ID + 1);
     if (sendToDrive) {
-        uint8_t data[8] = {0};
+        const uint8_t zeros[8] = {0};
         uint16_t extra = (newId << 8) | DEFAULT_HOST_ID;
-        ret = send(RobStrideCmdType::SetCanID, data, 8, extra, CanSS::Retry, CanReq::Command);
+        ret = send(RobStrideCmdType::SetCanID, zeros, 8, extra, CanSS::Singleshot);
     }
     id_ = newId;
     return ret;

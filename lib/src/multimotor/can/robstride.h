@@ -40,7 +40,8 @@ class RobStrideDriver : public MotorDrive {
 
 public:
     RobStrideDriver(uint8_t id, CanDriveManager* bus, const char* name);
-    static constexpr uint8_t DEFAULT_ID = 0x7F;
+    static constexpr uint8_t MAX_ID = 0x7F;
+    static constexpr uint8_t DEFAULT_ID = MAX_ID;
     static constexpr uint8_t DEFAULT_HOST_ID = 0x66;
 
     // MotorDrive interface implementation
