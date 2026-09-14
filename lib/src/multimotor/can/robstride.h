@@ -46,7 +46,8 @@ public:
     static constexpr uint8_t DEFAULT_HOST_ID = 0x66;
 
     // MotorDrive interface implementation
-    const char* typeName() const override { return "RS"; }
+    static constexpr const char* SHORTNAME = "RS";
+    const char* typeName() const override { return SHORTNAME; }
     uint32_t getId() const override { return id_; }
     bool requestStatus() override;
     bool setMode(MotorMode mode) override;

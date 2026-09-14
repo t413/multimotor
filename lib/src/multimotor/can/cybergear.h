@@ -20,7 +20,8 @@ public:
     static constexpr uint8_t DEFAULT_ID = 0x7D;
 
     //contract
-    const char* typeName() const override { return "CG"; }
+    static constexpr const char* SHORTNAME = "CG";
+    const char* typeName() const override { return SHORTNAME; }
     uint32_t getId() const override { return id_; }
     bool requestStatus() override;
     bool setMode(MotorMode) override;
