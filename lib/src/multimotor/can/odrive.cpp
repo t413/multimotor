@@ -33,7 +33,7 @@ enum class CmdIDs : uint8_t {
     GetPowers             = 0x1d,
 };
 
-ODriveDriver::ODriveDriver(uint8_t id, CanDriveManager* bus, const char* n) : MotorDrive(n), id_(id), bus_(bus) { }
+ODriveDriver::ODriveDriver(uint8_t id, CanDriveManager* bus, const char* n) : MotorDrive(n, bus), id_(id), bus_(bus) { }
 
 uint16_t mkID(uint8_t id, CmdIDs cmd) {
     return (id << ODriveDriver::ID_START_OFFSET) | (uint16_t) cmd;

@@ -1,5 +1,15 @@
 #include "motordrive.h"
 #include "debugprint.h"
+#include "drive_manager.h"
+
+
+MotorDrive::MotorDrive(const char* name, DriveManager* mgr) : name_(name), mgr_(mgr) {
+    if (mgr) mgr->addDrive(this);
+}
+
+MotorDrive::~MotorDrive() {
+    if (mgr_) mgr_->remove(this);
+}
 
 bool MotorDrive::pingId(uint8_t id, uint32_t timeout) {
     if (!validID(id)) return false;
@@ -24,4 +34,9 @@ int16_t MotorDrive::discoverNext(bool updateThisID, uint32_t pingTimeout, uint32
         if ((millis() - start) > totalTimeout) break;
     }
     return -1;
+}
+
+bool MotorDrive::waitForReply(uint32_t now_ms, uint32_t timeout_us) {
+    auto bus = getManager();
+    return bus? bus->readOnce(now_ms, timeout_us) : false;
 }

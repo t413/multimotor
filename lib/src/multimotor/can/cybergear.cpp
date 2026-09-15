@@ -70,7 +70,7 @@ MotorMode toMotorMode(CyberGearMode mode) {
 }
 
 
-CyberGearDriver::CyberGearDriver(uint8_t id, CanDriveManager* bus, const char* n) : MotorDrive(n), id_(id), bus_(bus) { }
+CyberGearDriver::CyberGearDriver(uint8_t id, CanDriveManager* bus, const char* n) : MotorDrive(n, bus), id_(id), bus_(bus) { }
 
 uint32_t mkID(uint8_t cmd, uint8_t opthi, uint8_t optlo, uint8_t id) {
     return (cmd << 24) | (opthi << 16) | (optlo << 8) | id;

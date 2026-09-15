@@ -4,7 +4,8 @@
 
 class CanDriveManager : public DriveManager {
 public:
-    CanDriveManager(CanInterface* canInterface) : interface_(canInterface) {}
+    CanDriveManager(CanInterface* interface=nullptr) : interface_(interface) { }
+    void setup(CanInterface* canInterface) { interface_ = canInterface; }
 
     virtual void addDrive(MotorDrive* drive) override;
     virtual MotorDrive* getDrive(uint8_t id) override;
@@ -18,6 +19,10 @@ public:
 
     virtual bool send(uint32_t id, const uint8_t* data, uint8_t len, CanFrame extended, CanSS ss = CanSS::Singleshot, CanReq rtr = CanReq::Command);
     bool waitForReply(CanMessage&, uint32_t timeout_us, uint32_t id = 0, uint32_t idmask = 0xffffffff);
+
+protected:
+    virtual MotorDrive** getDrives() override { return drives_; }
+    virtual void setCount(uint8_t c) override { driveCount_ = c; }
 
 protected:
     static constexpr uint8_t MAX_DRIVES = 16;

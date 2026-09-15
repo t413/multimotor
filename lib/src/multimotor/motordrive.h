@@ -1,6 +1,8 @@
 #pragma once
 #include <stdint.h>
 
+class DriveManager;
+
 enum class MotorMode {
     Disabled = 0,
     Current = 1,
@@ -18,10 +20,11 @@ struct MotorState {
 };
 class MotorDrive {
 public:
-    MotorDrive(const char* name) : name_(name) { }
-    virtual ~MotorDrive() { }
+    MotorDrive(const char* name, DriveManager* mgr); //auto adds to manager
+    virtual ~MotorDrive(); //auto removes from manager
     virtual uint32_t getId() const = 0;
     virtual const char* getName() const { return name_; }
+    virtual DriveManager* getManager() { return mgr_; }
     virtual const char* typeName() const = 0;
     virtual bool requestStatus() = 0;
     virtual bool setMode(MotorMode mode) = 0;
@@ -44,6 +47,9 @@ public:
     virtual bool validID(int id) const = 0;
     virtual int16_t discoverNext(bool updateThisID = true, uint32_t pingTimeout = 100, uint32_t totalTimeout = 1000); //search and find another instance on the bus, optionally updating id_
 
+    virtual bool waitForReply(uint32_t now_ms, uint32_t timeout_us);
+
 protected:
     const char* name_ = nullptr;
+    DriveManager* mgr_ = nullptr;
 };

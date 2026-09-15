@@ -24,9 +24,7 @@ constexpr uint8_t LX16A_SERVO_ANGLE_LIMIT_READ = 21;
 #define LX_MIN_PACKET_LENGTH 4
 
 
-LXServo::LXServo(uint8_t id, SerialDriveManager* bus, const char* name) : MotorDrive(name), id_(id), bus_(bus) {
-    bus_->addDrive(this);
-}
+LXServo::LXServo(uint8_t id, SerialDriveManager* bus, const char* name) : MotorDrive(name, bus), id_(id), bus_(bus) { }
 
 int LXServo::buildPacket(uint8_t* txbuf, uint8_t cmd, const uint8_t* params, int param_cnt, uint8_t id) {
     if (param_cnt < 0 || param_cnt > 4) return -1;

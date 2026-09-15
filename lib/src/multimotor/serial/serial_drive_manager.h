@@ -25,6 +25,9 @@ public:
     void write(uint8_t const* data, uint8_t len);
 
 protected:
+    virtual MotorDrive** getDrives() override { return drives_; }
+    virtual void setCount(uint8_t c) override { driveCount_ = c; }
+protected:
     static constexpr uint8_t MAX_DRIVES = 16;
     MotorDrive* drives_[MAX_DRIVES] = {nullptr};
     uint8_t driveCount_ = 0;

@@ -22,7 +22,7 @@ enum class RobStrideParams : uint16_t {
     VBUS = 0x701C,
 };
 
-RobStrideDriver::RobStrideDriver(uint8_t id, CanDriveManager* bus, const char* n) : MotorDrive(n), id_(id % (MAX_ID + 1)), bus_(bus) {}
+RobStrideDriver::RobStrideDriver(uint8_t id, CanDriveManager* bus, const char* n) : MotorDrive(n, bus), id_(id % (MAX_ID + 1)), bus_(bus) {}
 
 bool RobStrideDriver::send(RobStrideCmdType cmd, const uint8_t* data, uint8_t len, uint16_t extradata, CanSS ss, CanReq rtr) {
     uint32_t canId = (uint32_t(cmd) << 24) | (extradata << 8) | id_;  // cmd | master_id | motor_id
