@@ -52,6 +52,7 @@ public:
     bool requestStatus() override;
     bool setMode(MotorMode mode) override;
     bool setSetpoint(MotorMode mode, float value) override;
+    bool mitTarget(float position, float velocity, float kp, float kd, float torqueFF) override;
     bool handleIncoming(uint32_t id, uint8_t const* data, uint8_t len, uint32_t now) override;
     uint32_t getLastStatusTime() const override { return lastStatusTime_; }
     uint32_t getLastFaults() const override { return lastFaults_; }
@@ -69,11 +70,8 @@ public:
     bool setRobStrideMode(RobStrideCtrlMode mode);
     bool enable(bool en = true);
     bool setZeroPosition();
-    bool motionControl(float position, float velocity, float kp, float kd, float torque);
     bool reqParam(uint16_t paramId);
 
 private:
     bool send(RobStrideCmdType cmd, const uint8_t* data, uint8_t len, uint16_t extradata = DEFAULT_HOST_ID, CanSS ss = CanSS::Singleshot, CanReq rtr = CanReq::Command);
-    static uint16_t floatToUint(float x, float x_min, float x_max, int bits);
-    static float uintToFloat(uint16_t x_int, float x_min, float x_max, int bits);
 };

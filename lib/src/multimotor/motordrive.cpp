@@ -11,6 +11,20 @@ MotorDrive::~MotorDrive() {
     if (mgr_) mgr_->remove(this);
 }
 
+uint16_t MotorDrive::floatToUint(float x, float x_min, float x_max, int bits) {
+    float span = x_max - x_min;
+    float offset = x_min;
+    if (x > x_max) x = x_max;
+    else if (x < x_min) x = x_min;
+    return (uint16_t)((x - offset) * ((float)((1 << bits) - 1)) / span);
+}
+
+float MotorDrive::uintToFloat(uint16_t x_int, float x_min, float x_max, int bits) {
+    float span = x_max - x_min;
+    float offset = x_min;
+    return ((float)x_int) * span / ((float)((1 << bits) - 1)) + offset;
+}
+
 bool MotorDrive::pingId(uint8_t id, uint32_t timeout) {
     if (!validID(id)) return false;
     uint8_t originalId = getId();

@@ -52,6 +52,7 @@ public:
     bool requestStatus() override;
     bool setMode(MotorMode) override;
     bool setSetpoint(MotorMode, float) override;
+    bool mitTarget(float position, float velocity, float kp, float kd, float torqueFF) override { return false; }
     bool handleIncoming(uint32_t id, uint8_t const* data, uint8_t len, uint32_t now) override;
     uint32_t getLastStatusTime() const override { return lastStatusTime_; }
     uint32_t getLastFaults() const override { return lastFaults_; }

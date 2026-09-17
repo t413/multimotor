@@ -30,20 +30,6 @@ bool RobStrideDriver::send(RobStrideCmdType cmd, const uint8_t* data, uint8_t le
     return bus_? bus_->send(canId, data, len, CanFrame::Extended, ss, rtr) : false;
 }
 
-uint16_t RobStrideDriver::floatToUint(float x, float x_min, float x_max, int bits) {
-    float span = x_max - x_min;
-    float offset = x_min;
-    if (x > x_max) x = x_max;
-    else if (x < x_min) x = x_min;
-    return (uint16_t)((x - offset) * ((float)((1 << bits) - 1)) / span);
-}
-
-float RobStrideDriver::uintToFloat(uint16_t x_int, float x_min, float x_max, int bits) {
-    float span = x_max - x_min;
-    float offset = x_min;
-    return ((float)x_int) * span / ((float)((1 << bits) - 1)) + offset;
-}
-
 bool RobStrideDriver::requestStatus() {
     uint8_t data[8] = {0};
     if (lastCommsTime_ == 0)
@@ -86,7 +72,7 @@ bool RobStrideDriver::setMode(MotorMode mode) {
     return ret;
 }
 
-bool RobStrideDriver::motionControl(float position, float velocity, float kp, float kd, float torque) {
+bool RobStrideDriver::mitTarget(float position, float velocity, float kp, float kd, float torque) {
     uint16_t pos_int = floatToUint(position, ROBSTRIDE_P_MIN, ROBSTRIDE_P_MAX, 16);
     uint16_t vel_int = floatToUint(velocity, ROBSTRIDE_V_MIN, ROBSTRIDE_V_MAX, 16);
     uint16_t kp_int = floatToUint(kp, 0, 500, 16);
@@ -105,11 +91,11 @@ bool RobStrideDriver::motionControl(float position, float velocity, float kp, fl
 
 bool RobStrideDriver::setSetpoint(MotorMode mode, float value) {
     if (mode == MotorMode::Position) {
-        return motionControl(value, 0, 50, 1, 0);  // Position with default gains
+        return mitTarget(value, 0, 50, 1, 0);  // Position with default gains
     } else if (mode == MotorMode::Speed) {
-        return motionControl(0, value, 0, 1, 0);  // Velocity control
+        return mitTarget(0, value, 0, 1, 0);  // Velocity control
     } else if (mode == MotorMode::Current) {
-        return motionControl(0, 0, 0, 0, value);  // Torque control
+        return mitTarget(0, 0, 0, 0, value);  // Torque control
     }
     return false;
 }

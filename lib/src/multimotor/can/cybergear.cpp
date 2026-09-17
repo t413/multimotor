@@ -76,11 +76,11 @@ uint32_t mkID(uint8_t cmd, uint8_t opthi, uint8_t optlo, uint8_t id) {
     return (cmd << 24) | (opthi << 16) | (optlo << 8) | id;
 }
 
-bool CyberGearDriver::send(CGCmds cmd, const uint8_t* data, uint8_t len, CanSS ss) {
+bool CyberGearDriver::send(CGCmds cmd, const uint8_t* data, uint8_t len, CanSS ss, uint8_t opthi, uint8_t optlo) {
     if (!bus_) return false;
     if (lastCommsTime_ == 0) ss = CanSS::Singleshot; //force no-retry until we've heard anything back
     //no RTR, seems to break things with cybergear CAN. Always use CanReq::Command.
-    return bus_->send(mkID((uint8_t)cmd, 0, 0, id_), data, len, CanFrame::Extended, ss, CanReq::Command);
+    return bus_->send(mkID((uint8_t)cmd, opthi, optlo, id_), data, len, CanFrame::Extended, ss, CanReq::Command);
 }
 
 
@@ -128,6 +128,25 @@ bool CyberGearDriver::setSetpoint(MotorMode mode, float value) {
     memcpy(&data[0], &addr, 2);
     memcpy(&data[4], &value, 4);
     return send(CGCmds::WriteParamUpper, data, 8, CanSS::Singleshot);
+}
+
+constexpr float CG_P_MAX =  4 * M_PI;
+constexpr float CG_V_MAX = 50.0f; //rad/s
+constexpr float CG_T_MAX = 6.0f;
+
+bool CyberGearDriver::mitTarget(float position, float velocity, float kp, float kd, float torque) {
+    uint16_t pos_int = floatToUint(position, -CG_P_MAX, CG_P_MAX, 16);
+    uint16_t vel_int = floatToUint(velocity, -CG_V_MAX, CG_V_MAX, 16);
+    uint16_t kp_int = floatToUint(kp, 0, 500, 16);
+    uint16_t kd_int = floatToUint(kd, 0, 5, 16);
+    uint16_t torque_int = floatToUint(torque, -CG_T_MAX, CG_T_MAX, 16);
+    uint8_t data[8] = {
+        static_cast<uint8_t>(pos_int >> 8), static_cast<uint8_t>(pos_int & 0xFF),
+        static_cast<uint8_t>(vel_int >> 8), static_cast<uint8_t>(vel_int & 0xFF),
+        static_cast<uint8_t>(kp_int >> 8),  static_cast<uint8_t>(kp_int & 0xFF),
+        static_cast<uint8_t>(kd_int >> 8),  static_cast<uint8_t>(kd_int & 0xFF),
+    };
+    return send(CGCmds::Position, data, 8, CanSS::Singleshot, torque_int >> 8, torque_int & 0xFF);
 }
 
 bool CyberGearDriver::fetchVBus() {

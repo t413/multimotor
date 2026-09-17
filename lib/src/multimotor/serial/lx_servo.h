@@ -24,6 +24,7 @@ public:
     bool setMode(MotorMode mode) override;
     bool supportsMode(MotorMode mode) const override { return mode != MotorMode::Current; }
     bool setSetpoint(MotorMode mode, float value) override;
+    bool mitTarget(float position, float velocity, float kp, float kd, float torqueFF) override { return setSetpoint(MotorMode::Position, velocity); }
     bool handleIncoming(uint32_t id, uint8_t const* data, uint8_t len, uint32_t now) override; // Handles payload for this servo
     uint32_t getLastStatusTime() const override { return lastStatusTime_; }
     uint32_t getLastFaults() const override { return lastFaults_; }

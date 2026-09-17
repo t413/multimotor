@@ -30,6 +30,7 @@ public:
     virtual bool setMode(MotorMode mode) = 0;
     virtual bool supportsMode(MotorMode) const { return true; }
     virtual bool setSetpoint(MotorMode, float) = 0;
+    virtual bool mitTarget(float position, float velocity, float kp, float kd, float torqueFF) = 0;
     virtual bool handleIncoming(uint32_t id, uint8_t const* data, uint8_t len, uint32_t now) = 0;
     virtual uint32_t getLastStatusTime() const = 0;
     virtual uint32_t getLastFaults() const = 0;
@@ -48,6 +49,10 @@ public:
     virtual int16_t discoverNext(bool updateThisID = true, uint32_t pingTimeout = 100, uint32_t totalTimeout = 1000); //search and find another instance on the bus, optionally updating id_
 
     virtual bool waitForReply(uint32_t now_ms, uint32_t timeout_us);
+
+public: //utilities
+    static uint16_t floatToUint(float x, float x_min, float x_max, int bits);
+    static float uintToFloat(uint16_t x_int, float x_min, float x_max, int bits);
 
 protected:
     const char* name_ = nullptr;
