@@ -41,5 +41,6 @@ public:
     bool validID(int id) const override { return id >= 0 && id < 254; }
     MotorDrive* makeDuplicate(int16_t id = -1) const override;
     bool writeNewId(uint8_t newId, bool sendToDrive = true) override;
+    bool setZero() override;
 };
 

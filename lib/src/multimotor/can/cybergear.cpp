@@ -201,3 +201,8 @@ bool CyberGearDriver::writeNewId(uint8_t newId, bool sendToDrive) {
     id_ = newId;
     return ret;
 }
+
+bool CyberGearDriver::setZero() {
+    uint8_t data[8] = {1, 0};
+    return send(CGCmds::SetMechPositionToZero, data, 8, CanSS::Retry);
+}
