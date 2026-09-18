@@ -1,33 +1,14 @@
 #pragma once
+#include <math.h>
 #include "../motordrive.h"
 #include "../can/can_interface.h"
 
 class CanDriveManager;
 
-enum class RobStrideCtrlMode : uint8_t {
-    MotionControl = 0,
-    Position = 1,
-    Speed = 2,
-    Current = 3,
-    SetZero = 4
-};
-
-enum class RobStrideCmdType : uint8_t {
-    GetID = 0x00,
-    MotionControl = 0x01,
-    MotorRequest = 0x02,
-    MotorEnable = 0x03,
-    MotorStop = 0x04,
-    SetPosZero = 0x06,
-    SetCanID = 0x07,
-    ControlMode = 0x12,
-    GetSingleParam = 0x11,
-    SetSingleParam = 0x12,
-    ErrorFeedback = 0x15,
-    SaveData = 0x16,
-};
+enum class RSCmd : uint8_t;
 
 class RobStrideDriver : public MotorDrive {
+protected:
     uint8_t id_ = 0;
     CanDriveManager* bus_ = nullptr;
     uint32_t lastFaults_ = 0;
@@ -38,9 +19,13 @@ class RobStrideDriver : public MotorDrive {
     MotorMode lastSentMode_ = MotorMode::Disabled;
     bool enabled_ = false;
     uint8_t serial_[8] = {0};
+    float scalePMax_ = 4 * M_PI;
+    float scaleVMax_ = 50.0f; //rad/s, value for EL05
+    float scaleTMax_ = 6.0f; //EL05
 
 public:
     RobStrideDriver(uint8_t id, CanDriveManager* bus, const char* name);
+    void setScales(float pmax, float vmax, float tmax);
     static constexpr uint8_t MAX_ID = 0x7F;
     static constexpr uint8_t DEFAULT_ID = MAX_ID;
     static constexpr uint8_t DEFAULT_HOST_ID = 0x66;
@@ -66,12 +51,19 @@ public:
     bool setZero() override;
     bool saveSettings() override;
 
-    // RobStride specific methods
-    bool setRobStrideMode(RobStrideCtrlMode mode);
     bool enable(bool en = true);
     bool setZeroPosition();
     bool reqParam(uint16_t paramId);
 
 private:
-    bool send(RobStrideCmdType cmd, const uint8_t* data, uint8_t len, uint16_t extradata = DEFAULT_HOST_ID, CanSS ss = CanSS::Singleshot, CanReq rtr = CanReq::Command);
+    bool send(RSCmd cmd, const uint8_t* data, uint8_t len, uint16_t extradata = DEFAULT_HOST_ID, CanSS ss = CanSS::Singleshot, CanReq rtr = CanReq::Command);
+};
+
+class CGDrive : public RobStrideDriver {
+public:
+    CGDrive(uint8_t id, CanDriveManager* bus, const char* name) : RobStrideDriver(id,bus,name) {
+        setScales(scalePMax_, 30.0f, 12.0f);
+    }
+    static constexpr const char* SHORTNAME = "CG";
+    const char* typeName() const override { return SHORTNAME; }
 };

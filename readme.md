@@ -15,9 +15,9 @@ _Used by my rover controller [OmniCtrl](https://t413.com/go/omnictrl?ref=multimo
 ## Features:
 
 - Supports different CanBus motors _on the same CAN bus_
+  * Robstride motors
+  * Xiaomi CyberGear motors (now fully unified driver with Robstride)
   * ODrive and odrive-compatible motors
-  * Xiaomi CyberGear motors
-  * Robstride motors: (needs testers!)
 - **Environment independent** CAN support
   * Arduino, PlatformIO, ESP-IDF, linux, etc.
   * Includes support for ESP32's native TWAI CanBus library
@@ -25,6 +25,7 @@ _Used by my rover controller [OmniCtrl](https://t413.com/go/omnictrl?ref=multimo
   * Hiwonder/LewanSoul bus servos (like the LX-16A)
 
 ### Roadmap / future plans:
+  * More CAN QDD actuator families
   * Feetech bus servos (like the STS3215)
 
 ---
@@ -44,7 +45,7 @@ _Join my [3D Design Discord](https://3d.t413.com/go/discord?ref=gh-omni) and say
 - Create a driver object (on stack, heap, etc)
   ```cpp
   ODriveDriver omotor(ID1, &interface);
-  CyberGearDriver cmotor(ID2, &interface);
+  RobstrideDriver cmotor(ID2, &interface);
   ```
 - Handle incoming messages in your loop:
   ```cpp

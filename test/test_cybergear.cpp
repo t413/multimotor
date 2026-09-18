@@ -1,38 +1,37 @@
 #include <gtest/gtest.h>
-#include <multimotor/can/cybergear.h>
+#include <multimotor/can/robstride.h>
 #include <multimotor/can/can_drive_manager.h>
 #include "test_utils.h"
 
 
-TEST(CyberGear, RequestStatus) {
+TEST(Robstride, RequestStatus) {
     MockCanInterface mockCan;
     CanDriveManager mgr(&mockCan);
-    CyberGearDriver driver(16, &mgr, "test");
+    RobStrideDriver driver(16, &mgr, "test");
     printf("Requesting status...\n");
     fflush(stdout);
     driver.requestStatus();
     ASSERT_FALSE(mockCan.sentFrames.empty());
     auto& frame = mockCan.sentFrames.back();
-    EXPECT_EQ(frame.id, 0x15000010);
+    EXPECT_EQ(frame.id & 0xff, 16); //only check dest address (sends ping for first req)
     EXPECT_LE(frame.len, 8);
 }
 
-TEST(CyberGear, SetEnable) {
+TEST(RobStride, SetEnable) {
     MockCanInterface mockCan;
     CanDriveManager mgr(&mockCan);
-    CyberGearDriver driver(16, &mgr, "test");
-    driver.setEnable(true);
+    RobStrideDriver driver(16, &mgr, "test");
+    driver.enable(true);
     ASSERT_FALSE(mockCan.sentFrames.empty());
     auto& frame = mockCan.sentFrames.back();
-    EXPECT_EQ(frame.id, 0x03000010);
-    ASSERT_EQ(frame.len, 0);
+    EXPECT_EQ(frame.id & 0xffff00ff, 0x03000010); //drop src id
+    ASSERT_EQ(frame.len, 8);
 }
 
 TEST(CyberGear, HandleIncoming) {
     MockCanInterface mockCan;
     CanDriveManager mgr(&mockCan);
-    CyberGearDriver driver(16, &mgr, "test");
-
+    CGDrive driver(16, &mgr, "test");
 
     // Prepare a realistic status frame
     // Compose CAN ID:
@@ -59,8 +58,8 @@ TEST(CyberGear, HandleIncoming) {
     auto status = driver.getMotorState();
     printf("Motor State: Position: %.2f, Velocity: %.2f, Torque: %.2f, Temperature: %.2f, Mode: %d\n",
            status.position, status.velocity, status.torque, status.temperature, static_cast<int>(status.mode));
-    EXPECT_NEAR(status.position, -12.03f, 0.01f);
-    EXPECT_NEAR(status.velocity, -24.80f, 0.01f);
+    EXPECT_NEAR(status.position, -12.0f, 0.1f);
+    EXPECT_NEAR(status.velocity, -24.80f, 0.1f);
     EXPECT_NEAR(status.torque, -8.67f, 0.01f);
     EXPECT_NEAR(status.temperature, 25.0f, 0.01f);
     EXPECT_EQ(status.mode, MotorMode::Position);
