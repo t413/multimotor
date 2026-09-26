@@ -34,6 +34,7 @@ public:
     static constexpr const char* SHORTNAME = "RS";
     const char* typeName() const override { return SHORTNAME; }
     uint32_t getId() const override { return id_; }
+    uint32_t getLastCommsTime() const override { return lastCommsTime_; }
     bool requestStatus() override;
     bool setMode(MotorMode mode) override;
     bool setSetpoint(MotorMode mode, float value) override;

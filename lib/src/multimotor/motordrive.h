@@ -26,6 +26,7 @@ public:
     virtual const char* getName() const { return name_; }
     virtual DriveManager* getManager() { return mgr_; }
     virtual const char* typeName() const = 0;
+    virtual uint32_t getLastCommsTime() const { return getLastStatusTime(); }
     virtual bool requestStatus() = 0;
     virtual bool setMode(MotorMode mode) = 0;
     virtual bool supportsMode(MotorMode) const { return true; }
