@@ -4,11 +4,12 @@
 
 class CanDriveManager : public DriveManager {
 public:
+    static constexpr uint8_t MAX_DRIVES = 16;
     CanDriveManager(CanInterface* interface=nullptr) : interface_(interface) { }
     void setup(CanInterface* canInterface) { interface_ = canInterface; }
 
     virtual void addDrive(MotorDrive* drive) override;
-    virtual MotorDrive* getDrive(uint8_t id) override;
+    virtual MotorDrive* getDrive(uint8_t idx) override;
     virtual MotorDrive* const* getDrives() const override { return drives_; }
     virtual uint8_t getCount() const override;
     MotorDrive* first() const override { return driveCount_ > 0 ? drives_[0] : nullptr; }
@@ -25,7 +26,6 @@ protected:
     virtual void setCount(uint8_t c) override { driveCount_ = c; }
 
 protected:
-    static constexpr uint8_t MAX_DRIVES = 16;
     MotorDrive* drives_[MAX_DRIVES] = {nullptr};
     uint8_t driveCount_ = 0;
     CanInterface* interface_ = nullptr;

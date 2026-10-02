@@ -1,4 +1,5 @@
 #include "drive_manager.h"
+#include "motordrive.h"
 
 bool DriveManager::remove(MotorDrive* drive) {
     MotorDrive** drives = getDrives();
@@ -14,4 +15,15 @@ bool DriveManager::remove(MotorDrive* drive) {
         }
     }
     return false;
+}
+
+MotorDrive* DriveManager::getDriveByID(uint8_t id) {
+    auto count = getCount();
+    for (uint8_t i = 0; i < count; ++i) {
+        auto drive = getDrive(i);
+        if (drive && drive->getId() == id) {
+            return drive;
+        }
+    }
+    return nullptr;
 }

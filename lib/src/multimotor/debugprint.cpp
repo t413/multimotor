@@ -7,12 +7,15 @@ void DebugPrinter::setPrinter(DebugPrinter* printer) { instance_ = printer; }
 DebugPrinter* DebugPrinter::getPrinter() { return instance_; }
 
 void DebugPrinter::log(const char* format, ...) {
-    if (instance_ && instance_->availableForWrite()) {
-        va_list args;
-        va_start(args, format);
-        instance_->printf(format, args);
-        va_end(args);
+    if (!instance_ || !instance_->availableForWrite()) {
+        return;
     }
+    va_list args;
+    va_start(args, format);
+    char buffer[256];
+    vsnprintf(buffer, sizeof(buffer), format, args);
+    va_end(args);
+    instance_->println(buffer);
 }
 
 void DebugPrinter::printhex(const uint8_t* buf, size_t len, bool newline) {

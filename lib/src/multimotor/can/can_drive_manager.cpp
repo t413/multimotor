@@ -12,13 +12,8 @@ void CanDriveManager::addDrive(MotorDrive* drive) {
     }
 }
 
-MotorDrive* CanDriveManager::getDrive(uint8_t id) {
-    for (uint8_t i = 0; i < driveCount_; ++i) {
-        if (drives_[i] && drives_[i]->getId() == id) {
-            return drives_[i];
-        }
-    }
-    return nullptr;
+MotorDrive* CanDriveManager::getDrive(uint8_t idx) {
+    return idx < driveCount_ ? drives_[idx] : nullptr;
 }
 
 uint8_t CanDriveManager::getCount() const {

@@ -9,9 +9,9 @@ public:
     void beginDualPins(SerialInterface* port, int txPin, int rxPin);
 
     virtual void addDrive(MotorDrive* drive) override;
-    virtual MotorDrive* getDrive(uint8_t id) override;
+    virtual MotorDrive* getDrive(uint8_t idx) override { return idx < driveCount_ ? drives_[idx] : nullptr; }
     virtual MotorDrive* const* getDrives() const override { return drives_; }
-    virtual uint8_t getCount() const override;
+    virtual uint8_t getCount() const override { return driveCount_; }
     MotorDrive* first() const override { return driveCount_ > 0 ? drives_[0] : nullptr; }
 
     bool writeAndConsumeEcho(uint8_t const* data, uint8_t len, uint32_t timeout_us);

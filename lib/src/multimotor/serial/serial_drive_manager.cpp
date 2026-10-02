@@ -39,19 +39,6 @@ void SerialDriveManager::addDrive(MotorDrive* drive) {
     }
 }
 
-MotorDrive* SerialDriveManager::getDrive(uint8_t id) {
-    for (uint8_t i = 0; i < driveCount_; ++i) {
-        if (drives_[i] && drives_[i]->getId() == id) {
-            return drives_[i];
-        }
-    }
-    return nullptr;
-}
-
-uint8_t SerialDriveManager::getCount() const {
-    return driveCount_;
-}
-
 bool SerialDriveManager::writeAndConsumeEcho(uint8_t const* data, uint8_t len, uint32_t timeout_us) {
     write(data, len); // existing write(), handles pin direction switch
     uint32_t start = micros();
