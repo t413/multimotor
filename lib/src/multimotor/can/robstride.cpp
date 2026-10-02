@@ -71,7 +71,7 @@ bool RobStrideDriver::setMode(MotorMode mode) {
 }
 
 bool RobStrideDriver::mitTarget(float position, float velocity, float kp, float kd, float torque) {
-    uint16_t pos_int = floatToUint(position, -scalePMax_, scalePMax_, 16);
+    uint16_t pos_int = floatToUint((position - posOffset_), -scalePMax_, scalePMax_, 16);
     uint16_t vel_int = floatToUint(velocity, -scaleVMax_, scaleVMax_, 16);
     uint16_t kp_int = floatToUint(kp, 0, 500, 16);
     uint16_t kd_int = floatToUint(kd, 0, 5, 16);
@@ -99,6 +99,7 @@ bool RobStrideDriver::setSetpoint(MotorMode mode, float value) {
 }
 
 bool RobStrideDriver::setZeroPosition() {
+    posOffset_ = 0;
     uint8_t data[8] = {0};
     return send(RSCmd::SetPosZero, data, 8, DEFAULT_HOST_ID, CanSS::Retry, CanReq::Command);
 }
@@ -162,7 +163,7 @@ bool RobStrideDriver::handleIncoming(uint32_t id, uint8_t const* data, uint8_t l
         lastFaults_ = (id >> 16) & 0x3F; //bits 16~21 = [Uncalibrated, hall, magsense, overtemp, overcurrent, undervolt]
         uint8_t runmode = (id >> 22) & 0x3; //bits 22~23, 0 disabled, 1 position, 2 speed, 3 current
 
-        lastStatus_.position = uintToFloat(pos_int, -scalePMax_, scalePMax_, 16);
+        lastStatus_.position = uintToFloat(pos_int, -scalePMax_, scalePMax_, 16) + posOffset_;
         lastStatus_.velocity = uintToFloat(vel_int, -scaleVMax_, scaleVMax_, 16);
         lastStatus_.torque = uintToFloat(torque_int, -scaleTMax_, scaleTMax_, 16);
         lastStatus_.temperature = (float)temp_int / 10.0f;

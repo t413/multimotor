@@ -50,6 +50,8 @@ public:
     virtual int16_t discoverNext(bool updateThisID = true, uint32_t pingTimeout = 100, uint32_t totalTimeout = 1000); //search and find another instance on the bus, optionally updating id_
 
     virtual bool waitForReply(uint32_t now_ms, uint32_t timeout_us);
+    virtual void setPosOffset(float) { } //made optional and virtual since each driver needs to actually _use_ any offset in pkt handling
+    virtual float getPosOffset() const { return 0.0f; }
 
 public: //utilities
     static uint16_t floatToUint(float x, float x_min, float x_max, int bits);

@@ -22,6 +22,7 @@ protected:
     float scalePMax_ = 4 * M_PI;
     float scaleVMax_ = 50.0f; //rad/s, value for EL05
     float scaleTMax_ = 6.0f; //EL05
+    float posOffset_ = 0.0f;
 
 public:
     RobStrideDriver(uint8_t id, CanDriveManager* bus, const char* name);
@@ -51,6 +52,8 @@ public:
     bool writeNewId(uint8_t newId, bool sendToDrive = true) override;
     bool setZero() override;
     bool saveSettings() override;
+    virtual void setPosOffset(float v) { posOffset_ = v; }
+    virtual float getPosOffset() const { return posOffset_; }
 
     bool enable(bool en = true);
     bool setZeroPosition();
