@@ -51,7 +51,8 @@ public:
     MotorDrive* makeDuplicate(int16_t id = -1) const override;
     bool writeNewId(uint8_t newId, bool sendToDrive = true) override;
     bool setZero() override;
-    bool saveSettings() override;
+    virtual bool getHas2ndEncoder() const override { return true; }
+    virtual bool saveSettings() override;
     virtual void setPosOffset(float v) { posOffset_ = v; }
     virtual float getPosOffset() const { return posOffset_; }
 
@@ -70,4 +71,5 @@ public:
     }
     static constexpr const char* SHORTNAME = "CG";
     const char* typeName() const override { return SHORTNAME; }
+    virtual bool getHas2ndEncoder() const override { return false; }
 };

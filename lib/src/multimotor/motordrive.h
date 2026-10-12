@@ -41,6 +41,7 @@ public:
     virtual float getVBus() const = 0;
 
     virtual bool setZero() { return false; }
+    virtual bool getHas2ndEncoder() const { return false; }
     virtual bool saveSettings() { return false; }
     virtual bool writeNewId(uint8_t newId, bool sendToDrive = true) = 0;  // sends ID-write command targeting current id_
     virtual MotorDrive* makeDuplicate(int16_t id = -1) const = 0; //make new instance, -1 is default address
