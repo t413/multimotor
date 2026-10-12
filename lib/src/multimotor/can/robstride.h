@@ -53,8 +53,8 @@ public:
     bool setZero() override;
     virtual bool getHas2ndEncoder() const override { return true; }
     virtual bool saveSettings() override;
-    virtual void setPosOffset(float v) { posOffset_ = v; }
-    virtual float getPosOffset() const { return posOffset_; }
+    virtual void setPosOffset(float v) override { posOffset_ = v; }
+    virtual float getPosOffset() const override { return posOffset_; }
 
     bool enable(bool en = true);
     bool setZeroPosition();
